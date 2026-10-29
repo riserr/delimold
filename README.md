@@ -1,6 +1,8 @@
 # DELIMOLD — Rancangan Inti
 
-29 Oktober 2026 • Rancangan tujuan; aplikasi dan data belum dimigrasikan.
+29 Oktober 2026 • Skema database awal tersedia; aplikasi dan data belum dimigrasikan.
+
+Lihat [struktur database dan kontrak implementasi](database/README.md), [file SQL](database/schema), serta [pengujian skema](tests/test_schema.py).
 
 ## 1. Penempatan sistem
 
@@ -111,3 +113,4 @@ Aturan cetakan dipertahankan: Airbag tidak memakai bladder; Container Dipakai ha
 5. Hentikan pemakaian sumber lama setelah verifikasi; hapus sumber lama hanya setelah persetujuan pemilik.
 
 Sediakan backup berkala **di media/perangkat terpisah** dengan izin setara sumber; backup pada TENDERLOIN saja tidak melindungi dari kerusakan perangkat. Sumber utama tetap di TENDERLOIN; salinan SALAK bukan pengganti backup. Kompatibilitas browser kantor, termasuk IE8 bila masih wajib, perlu diuji; akses privat memakai browser yang didukung.
+

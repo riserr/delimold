@@ -1,0 +1,17 @@
+# Runtime data and secrets stay outside Git
+*.db
+*.db-*
+*.sqlite*
+.env
+.env.*
+!.env.example
+config/secrets*
+data/
+files/
+backups/
+logs/
+sync/
+published/
+incoming/
+__pycache__/
+*.pyc
