@@ -1,116 +1,57 @@
-# DELIMOLD — Rancangan Inti
+# DELIMOLD — TENDERLOIN & SALAK
 
-29 Oktober 2026 • Skema database awal tersedia; aplikasi dan data belum dimigrasikan.
+Pengembangan dari **DELIMOLD-Patch-Cetak-Kategori.zip**. Fitur kategori, cetakan, container, pattern, sticker, impor/ekspor Excel dan cetak/PDF dipertahankan. Data operasional tetap memakai `catalog.js` berisi JSON; tidak memakai SQLite.
 
-Lihat [struktur database dan kontrak implementasi](database/README.md), [file SQL](database/schema), serta [pengujian skema](tests/test_schema.py).
+## Penempatan dan hak akses
 
-## 1. Penempatan sistem
-
-**TENDERLOIN menjadi sumber utama seluruh data dan file DELIMOLD. SALAK menyimpan tampilan serta salinan operasional read-only untuk departemen lain.** Drive D komputer supervisor tidak lagi menjadi sumber data aktif setelah migrasi diverifikasi.
-
-| Komputer | Fungsi |
+| Lokasi / akun | Fungsi |
 |---|---|
-| TENDERLOIN | Menjalankan layanan aplikasi; menyimpan data cetakan, pattern, sticker, container, development project, dan pembelian privat |
-| SALAK | Menyajikan aplikasi baca, salinan data operasional dan gambar yang diizinkan; BAT membuka aplikasi SALAK |
-| STRAWBERRY, BLUEBERRY / PC engineer | Mengakses aplikasi utama TENDERLOIN |
-| PC PPC, Produksi / departemen lain | Mengakses tampilan baca SALAK tanpa koneksi ke TENDERLOIN |
+| TENDERLOIN | Layanan utama, semua data operasional, development, pembelian privat dan akun |
+| Supervisor / SUPERUSER | Kelola seluruh modul dan akun melalui browser |
+| Engineer / ENGINEER | Kelola operasional dan development melalui browser; tanpa akses pembelian/akun |
+| SALAK | Layanan baca dengan paket operasional terakhir yang berhasil diterima |
+| PPC / Produksi | Buka `http://SALAK:8765` melalui BAT; tanpa koneksi ke TENDERLOIN |
 
-Alur engineer: **browser → aplikasi TENDERLOIN → database utama**. Alur departemen lain: **BAT → browser → aplikasi baca SALAK → salinan lokal SALAK**. BAT hanya membuka URL, tanpa password. Semua tautan data/gambar pada tampilan SALAK harus dilayani dari SALAK, bukan TENDERLOIN.
+SALAK memberi akses baca operasional kepada pengguna jaringan yang dapat menjangkau layanannya; tidak meminta akun TENDERLOIN. Semua perubahan SALAK ditolak server. Data pembelian, dokumen development, password, sesi, serta audit internal tidak diterbitkan ke SALAK. Tab pembelian dan pengelolaan akun hanya diberikan kepada supervisor pada Workspace.
 
-Sinkronisasi satu arah: **TENDERLOIN → SALAK**, dipicu perubahan data yang boleh dipublikasikan. Syarat implementasi: jalur pengiriman ini diizinkan jaringan; belum diverifikasi. Jika diblokir, perlu bantuan IT. SALAK menjalankan layanan baca; izin layanan, firewall, URL/port dan mulai otomatis perlu diperiksa tanpa mengasumsikan hak administrator. Internet tidak diperlukan. Saat TENDERLOIN mati, SALAK tetap dapat menyajikan salinan terakhir selama layanan SALAK menyala.
+## Struktur penyimpanan
 
-## 2. Hak akses
-
-| Modul / tindakan | Supervisor (Superuser) | Engineer | PPC / Produksi / Viewer |
-|---|---|---|---|
-| Cetakan, pattern, sticker, container | Penuh | Tambah/edit/hapus | Baca/cetak |
-| Development project & dokumen teknik | Penuh | Tambah/edit/hapus | Tidak ada |
-| Pembelian, harga, supplier & lampiran | Penuh | Tidak ada | Tidak ada |
-| Akun, peran, konfigurasi, pemulihan | Penuh | Tidak ada | Tidak ada |
-
-Akun utama berada di TENDERLOIN. SALAK hanya melayani Viewer; bila memerlukan login, gunakan autentikasi lokal SALAK/Windows agar tidak bergantung pada koneksi pengguna ke TENDERLOIN. Jangan menyalin password, sesi atau akun Superuser ke SALAK. Hak akses mengikuti akun, bukan lokasi BAT. Hapus yang merusak relasi ditolak; data bersejarah diarsipkan.
-
-Tab pembelian hanya muncul untuk supervisor. Server juga wajib memeriksa izin pada API, pencarian, ekspor, dan unduhan; menyembunyikan tab saja tidak cukup. Akun memakai hash password dan sesi kedaluwarsa; tidak ada password di BAT/HTML. Superuser aplikasi bukan administrator Windows.
-
-## 3. Struktur folder
-
-Path berikut relatif terhadap folder instalasi `DELIMOLD`; drive ditentukan saat pemasangan.
-
-| Folder | Isi |
+| Folder di TENDERLOIN | Isi |
 |---|---|
-| `app/` | Halaman, CSS, JavaScript, komponen dan modul tampilan |
-| `server/` | Login, pemeriksaan izin, aturan bisnis, akses database/file |
-| `config/` | Konfigurasi dan rahasia server, tidak disajikan ke browser |
-| `data/operational/` | Database cetakan dan development project |
-| `data/private/` | Database supplier, pesanan dan harga |
-| `data/identity/` | Akun, peran dan sesi |
-| `files/pattern/` | SVG dan preview pattern |
-| `files/sticker/` | Gambar sticker |
-| `files/development/` | Dokumen dan lampiran proyek |
-| `files/private/` | Penawaran, PO dan lampiran pembelian |
-| `sync/` | Antrean publikasi, paket sementara dan status pengiriman ke SALAK |
-| `logs/` | Riwayat perubahan dan aktivitas sesuai izin |
-| `backups/` | Backup lokal dengan akses terbatas |
+| `Aplikasi/` | Server siap jalan dan tampilan; `Source/` berisi sumber pengembangan |
+| `config/server.json` | Mode, alamat layanan, host yang diizinkan, target publikasi |
+| `data/operational/catalog.js` | Koleksi cetakan lama dan revisinya |
+| `data/development/development.json` | Proyek, dokumen/revisi, relasi dan metadata lampiran |
+| `data/private/private.json` | Supplier, PO, item/harga serta metadata lampiran privat |
+| `data/identity/users.json` | Akun, peran dan hash password; tidak disajikan lewat web |
+| `files/pattern/`, `files/sticker/` | `KU-257.svg`, `KU-257-preview.png`, `ST-001.jpg` |
+| `files/development/`, `files/private/` | Lampiran memakai ID internal agar nama tidak bertabrakan |
+| `logs/auth.jsonl` | Login, kegagalan login dan logout tanpa password/token |
+| `backups/` | Tempat backup terkontrol; tetap sediakan salinan di perangkat terpisah |
 
-**Folder instalasi/data tidak dijadikan share umum.** Pengguna membaca dan mengubah data melalui layanan aplikasi. Folder privat, identitas, konfigurasi dan backup dilindungi izin Windows; hak edit data tidak memberikan hak mengubah kode. Pemisahan database di atas bersifat rancangan; format fisik disesuaikan setelah kode aplikasi diperiksa.
+SALAK menyimpan `Aplikasi/`, `config/server.json`, dan `published/`. Setiap paket berada di `published/packages/<id>/`; `published/current.json` menunjuk paket aktif. Gambar operasional disertakan dalam JSON paket dan dilayani API SALAK, sehingga tidak ada tautan gambar ke TENDERLOIN. SALAK tidak membutuhkan folder data privat/identitas utama.
 
-Di SALAK, folder `DELIMOLD-Viewer/` berisi:
+## Cara memasang paket uji
 
-| Folder/file | Isi |
-|---|---|
-| `DELIMOLD.bat` | Membuka URL aplikasi baca SALAK |
-| `app/`, `server/` | Tampilan dan layanan baca; tidak menyediakan API edit pengguna |
-| `published/` | Paket aktif: data operasional, gambar pattern/sticker, metadata sinkronisasi |
-| `incoming/` | Paket sementara; tidak dapat dibaca pengguna sebelum validasi selesai |
-| `config/`, `logs/` | Pengaturan layanan, izin penerimaan dan riwayat sinkronisasi |
+1. **Gunakan folder baru**, jangan menimpa instalasi/data yang sedang dipakai. Salin folder `Aplikasi/Runtime` dari paket Windows lama yang sudah berjalan; paket pembaruan ini tidak mengganti runtime tersebut.
+2. Di TENDERLOIN, jalankan `Siapkan-TENDERLOIN.bat`. Tarik file **`Database/catalog.js` lama** ke `Migrasi-Catalog.bat`. Migrasi menyalin dan memvalidasi sumber, menolak tujuan yang sudah terisi, dan tidak menghapus sumber lama.
+3. Jalankan `Setup-Supervisor.bat` di TENDERLOIN untuk membuat akun pertama dan password minimal 12 karakter. Tidak ada akun/password bawaan. Supervisor membuat akun engineer melalui **Workspace → Akun & peran**.
+4. Di SALAK, gunakan folder paket terpisah dan jalankan `Siapkan-SALAK.bat`. Sediakan jalur folder `published` yang **dapat ditulis dari TENDERLOIN**. Isi `publishTarget` pada konfigurasi TENDERLOIN dengan UNC sebenarnya, misalnya `\\SALAK\DELIMOLD-Publish\published`. Contoh ini bukan lokasi kantor yang sudah diverifikasi.
+5. Jalankan `Jalankan-Layanan.bat` di TENDERLOIN. Paket pertama dikirim ke SALAK. Lalu jalankan layanan SALAK. Engineer memakai `Buka-DELIMOLD.bat`; PPC/Produksi memakai `Buka-Baca-Saja.bat` atau `Buka-IE8.bat`. Layanan harus tetap berjalan pada kedua host; mulai otomatis Windows belum dipasang.
+6. Uji login/izin, data lama, kategori, Excel, gambar, cetak dan sinkronisasi sebelum berpindah operasional. SALAK tetap membaca paket terakhir bila TENDERLOIN mati. Hentikan pemakaian sumber lama hanya setelah cocok; jangan menghapus sumber lama sebelum backup dan verifikasi.
 
-Hanya proses penerbit yang diberi izin memperbarui salinan; PPC/Produksi tidak memiliki izin tulis. SALAK tidak menyimpan development, pembelian, supplier, harga, lampiran privat atau database identitas TENDERLOIN.
+Port bawaan 8765. Jika memakai IP/alias lain, sesuaikan `hosts` dan URL BAT; host yang tidak terdaftar ditolak. Firewall dan jalur TENDERLOIN → SALAK harus diizinkan kantor. Paket tidak mengubah firewall/izin Windows secara otomatis. Jalankan proses dengan akun Windows yang sesuai; batasi folder `data/private`, `data/identity`, konfigurasi dan backup dari akses file engineer. Akses aplikasi melalui browser saja. Superuser aplikasi tidak mengubah izin Windows.
 
-## 4. Struktur data dan relasi utama
+Login memakai password hash PBKDF2, cookie HttpOnly, sesi 8 jam, pemeriksaan perubahan peran/status, pembatasan percobaan dan token formulir. Logout, akun nonaktif atau perubahan akun membatalkan sesi. Restart layanan meminta login ulang. Koneksi bawaan HTTP LAN; gunakan hanya jalur kantor yang disetujui. Bila perlu enkripsi transport, terminasi HTTPS perlu disiapkan di jaringan kantor.
 
-Semua tabel memakai ID internal stabil; kode/nama boleh berubah tanpa memutus relasi. `1:N` berarti satu record memiliki banyak record terkait.
+## Data dan sinkronisasi
 
-| Data / tabel | Relasi dan aturan |
-|---|---|
-| `patterns`, `categories`, `mold_specs` | Pattern 1:N spek; kategori 1:N spek; spek menyimpan kode, size, pattern |
-| `mold_units`, `mold_brands` | Spek 1:N unit cetakan; unit 1:N merek; nomor cetakan unik per spek |
-| `container_models`, `container_units`, `container_spacers` | Model 1:N unit container dan 1:N spacer; cetakan menunjuk model dan spacer yang sesuai |
-| Main / Sharing pada `mold_units` | Main Segmented 1:N Sharing; Sharing menunjuk satu Main; tanpa siklus |
-| `stickers` | Katalog mandiri dengan kode unik; belum direlasikan ke cetakan |
-| `projects`, `project_documents`, `document_files`, `project_mold_links` | Proyek 1:N dokumen; dokumen 1:N file/revisi; tabel penghubung mengaitkan proyek dengan spek/unit cetakan |
-| `suppliers`, `purchase_orders`, `purchase_order_items` | Supplier 1:N PO; PO 1:N item; harga dan mata uang disimpan pada transaksi |
-| `order_item_mold_links`, `private_attachments` | Item pembelian dihubungkan ke unit yang diterima; PO 1:N lampiran privat |
-| `users`, `roles`, `user_roles`, `sessions`, `audit_events` | Akun, peran, sesi serta siapa mengubah apa dan kapan |
-| `publication_outbox` (TENDERLOIN) | Antrean tahan restart: publication_id, source_revision, status, attempts, last_error |
-| `publication_meta` (SALAK) | publication_id, source_revision, source_updated_at, published_at; metadata paket aktif |
+Lihat [struktur data](docs/DATA.md). Penyimpanan memeriksa revisi dan memakai penguncian serta penggantian file sementara. `.bak` menyimpan kondisi sebelum perubahan. Backup lengkap database dan lampiran dilakukan **saat layanan dihentikan**, lalu diuji pemulihannya.
 
-Pembelian dapat mengacu ke ID spek/unit operasional; referensi lintas database diperiksa server. Harga/supplier tidak disalin ke data operasional. Pesanan baru boleh belum memiliki unit cetakan; transaksi pembelian dan repair dibedakan.
+Revisi operasional yang berhasil tersimpan menjadi antrean tahan restart: pengirim membandingkannya dengan revisi paket SALAK. Perubahan operasional memicu publikasi langsung; pemeriksaan ulang setiap 15 detik hanya mengirim bila ada revisi tertunda. Perubahan development/privat tidak memicu publikasi. Kegagalan jaringan mempertahankan paket lama. Revisi lebih lama ditolak, revisi sama tidak diterbitkan ulang. Footer yang sudah ada menunjukkan **waktu publikasi berhasil**, bukan waktu refresh. File paket lama dipertahankan untuk pemulihan; pembersihan retensi dilakukan terkontrol saat layanan dihentikan.
 
-Aturan cetakan dipertahankan: Airbag tidak memakai bladder; Container Dipakai hanya muncul pada Total Set. Struktur detail development disesuaikan dengan dokumen kerja sebelum impor.
+## Validasi dan pengembangan
 
-### Publikasi saat ada perubahan
+Di `Aplikasi/Source`: `npm ci` lalu `npm run build` (hanya komputer pengembang). Pengguna Windows tidak menjalankan npm. Jalankan `node tests/architecture.test.js` dari root untuk pengujian integrasi pada folder sementara.
 
-- Sesudah tambah/edit/hapus operasional berhasil disimpan, antrekan publikasi secara konsisten dengan transaksi. Tidak ada pengiriman rutin jika tidak ada perubahan; perubahan privat/development tidak memicu publikasi SALAK.
-- Publikasikan hanya tabel, kolom dan gambar yang diizinkan dari cetakan, kategori, merek, container, pattern dan sticker; pertahankan ID serta relasinya. Jangan menyalin seluruh database utama karena berisi development.
-- Salinan mencerminkan perubahan, pengarsipan/penghapusan dan penggantian gambar. Paket data, gambar dan metadata divalidasi lalu diaktifkan sekaligus; pengguna tidak melihat paket setengah selesai.
-- Jika gagal, paket lama tetap aktif dan antrean mencoba kembali saat koneksi tersedia. Pengiriman ulang tidak menggandakan data; revisi lama tidak boleh menimpa revisi baru.
-- Gunakan **footer “Terakhir diperbarui” yang sudah ada**: tampilkan `published_at` dalam WIB, yaitu waktu paket berhasil diaktifkan di SALAK. Jangan memakai waktu membuka/refresh halaman atau waktu percobaan pengiriman yang gagal.
-
-## 5. Penamaan dan penyimpanan
-
-- Pattern: `KU-257.svg` dan `KU-257-preview.png`.
-- Sticker: `ST-001.jpg`; gunakan kode sticker, bukan nama lengkap.
-- Tanpa tambahan PAT/STK atau r001; gambar pattern/sticker baru menggantikan sebelumnya. Revisi dokumen development dikelola terpisah.
-- Path file disimpan relatif; kode unik dan nama file harus valid. Perubahan kode memperbarui nama file serta referensinya bersama.
-- Simpan memeriksa versi record agar edit antar pengguna tidak saling menimpa. Putus koneksi tidak membuat database kosong pengganti.
-
-## 6. Migrasi dan pemeriksaan wajib
-
-1. Backup sumber SALAK, TENDERLOIN dan drive D; petakan file, kode serta relasinya.
-2. Salin ke TENDERLOIN, cocokkan jumlah data dan lampiran, lalu uji aplikasi.
-3. Uji akun supervisor, engineer dan viewer, termasuk penolakan akses privat melalui URL langsung; uji edit bersamaan dan pemulihan backup.
-4. Publikasikan salinan awal ke SALAK dan arahkan BAT ke aplikasi baca SALAK. Uji perubahan, hapus, gambar, putus jaringan, pengiriman ulang dan waktu footer; pastikan tidak ada data privat ikut terkirim.
-5. Hentikan pemakaian sumber lama setelah verifikasi; hapus sumber lama hanya setelah persetujuan pemilik.
-
-Sediakan backup berkala **di media/perangkat terpisah** dengan izin setara sumber; backup pada TENDERLOIN saja tidak melindungi dari kerusakan perangkat. Sumber utama tetap di TENDERLOIN; salinan SALAK bukan pengganti backup. Kompatibilitas browser kantor, termasuk IE8 bila masih wajib, perlu diuji; akses privat memakai browser yang didukung.
-
+Target backend tetap Node 12/ES2019 dan tampilan ES3. Pengujian Linux dengan Node 12.22.12 bukan bukti kompatibilitas Windows 7, IE8, SMB/UNC atau ACL kantor. Paket ini memerlukan uji penerimaan di komputer kantor sebelum menggantikan versi lama. Lihat [hasil verifikasi](docs/VERIFIKASI.md).

@@ -1,0 +1,1 @@
+{"mode":"master","listen":"0.0.0.0","port":8765,"hosts":["tenderloin:8765","TENDERLOIN:8765","127.0.0.1:8765","localhost:8765"],"publishTarget":"","sessionHours":8}

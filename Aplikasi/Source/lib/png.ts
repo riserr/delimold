@@ -1,0 +1,5 @@
+import jpeg from '@/vendor/jpeg-js/index.js';
+import zlib from 'zlib';
+function crc(bytes:Buffer){let n=0xffffffff;for(const b of bytes){n^=b;for(let i=0;i<8;i++)n=(n>>>1)^((n&1)?0xedb88320:0);}return (n^0xffffffff)>>>0;}
+function chunk(type:string,data:Buffer){const name=Buffer.from(type),len=Buffer.alloc(4),sum=Buffer.alloc(4);len.writeUInt32BE(data.length,0);sum.writeUInt32BE(crc(Buffer.concat([name,data])),0);return Buffer.concat([len,name,data,sum]);}
+export function jpegPng(bytes:Buffer){const image=jpeg.decode(bytes,{useTArray:true,maxResolutionInMP:16,maxMemoryUsageInMB:256}),w=image.width,h=image.height,header=Buffer.alloc(13);header.writeUInt32BE(w,0);header.writeUInt32BE(h,4);header[8]=8;header[9]=6;const rows=Buffer.alloc((w*4+1)*h);for(let y=0;y<h;y++){rows[y*(w*4+1)]=0;Buffer.from(image.data.buffer,image.data.byteOffset+y*w*4,w*4).copy(rows,y*(w*4+1)+1);}return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',zlib.deflateSync(rows)),chunk('IEND',Buffer.alloc(0))]);}

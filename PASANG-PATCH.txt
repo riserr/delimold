@@ -1,0 +1,12 @@
+Paket ini mengembangkan DELIMOLD-Patch-Cetak-Kategori: kategori dan cetak/PDF tetap ada.
+
+INI PERUBAHAN ARSITEKTUR. Jangan langsung menimpa folder SALAK lama.
+Gunakan folder baru TENDERLOIN dan SALAK; ikuti README.md.
+Salin Aplikasi\Runtime dari paket lama yang sudah berfungsi. Tidak perlu npm pada komputer kantor.
+Migrasi-Catalog.bat menyalin Database\catalog.js lama tanpa menghapus sumber.
+Siapkan akun supervisor melalui Setup-Supervisor.bat di TENDERLOIN.
+Engineer masuk melalui browser TENDERLOIN; PPC/Produksi membuka layanan SALAK.
+Harga, supplier dan development hanya berada pada sumber utama sesuai izin akun.
+
+Versi ini sudah diuji pada Node 12.22.12 Linux dan sintaks ES3.
+Windows 7/IE8 asli dan SMB/UNC kantor tetap perlu uji penerimaan.
