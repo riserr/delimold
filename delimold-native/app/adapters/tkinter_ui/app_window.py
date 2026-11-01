@@ -21,6 +21,7 @@ class RoundedToolbarButton(tk.Canvas):
         self.label = text
         self.command = command
         self.primary = primary
+        self.enabled = True
         self.font = tkfont.Font(parent, family="Segoe UI", size=8)
         self.label_color = "#102017" if primary else INK
         self.normal_fill = GREEN if primary else WHITE
@@ -46,13 +47,31 @@ class RoundedToolbarButton(tk.Canvas):
 
     def _draw(self, fill):
         self.delete("all")
-        self._rounded_rect(0, 0, self.width - 1, self.height - 1, 5, self.border, "border")
-        self._rounded_rect(1, 1, self.width - 2, self.height - 2, 4, fill, "surface")
-        self.create_text(self.width // 2, self.height // 2, text=self.label, fill=self.label_color,
+        if not self.enabled:
+            fill = "#26322b"
+            border = LINE
+            text_color = MUTED
+        else:
+            border = self.border
+            text_color = self.label_color
+        self._rounded_rect(0, 0, self.width - 1, self.height - 1, 8, border, "border")
+        self._rounded_rect(1, 1, self.width - 2, self.height - 2, 7, fill, "surface")
+        self.create_text(self.width // 2, self.height // 2, text=self.label, fill=text_color,
                          font=self.font, tags="label")
 
     def _invoke(self, _event=None):
-        self.command()
+        if self.enabled:
+            self.command()
+
+    def configure(self, cnf=None, **kwargs):
+        state = kwargs.pop("state", None)
+        if state is not None:
+            self.enabled = state != "disabled"
+            self._draw(self.normal_fill if self.enabled else "#26322b")
+        if kwargs:
+            super().configure(cnf, **kwargs)
+
+    config = configure
 
     def cget(self, key):
         if key == "text":
@@ -182,18 +201,26 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.filter_fields_frame.pack(fill="x")
         self._build_filters()
         tablebox = tk.Frame(panel, bg=WHITE); tablebox.pack(fill="both", expand=True)
-        self.tree = ttk.Treeview(tablebox, show="headings", selectmode="browse")
+        horizontal_scroll = RoundedScrollbar(
+            tablebox, lambda *args: self.tree.xview(*args), orient="horizontal")
+        horizontal_scroll.pack(side="bottom", fill="x", padx=(5, 20), pady=(0, 3))
+        table_area = tk.Frame(tablebox, bg=WHITE); table_area.pack(fill="both", expand=True)
+        self.tree = ttk.Treeview(table_area, show="headings", selectmode="browse")
         self.tree.pack(side="left", fill="both", expand=True)
-        scroll = RoundedScrollbar(tablebox, self.tree.yview); scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
-        self.tree.configure(yscrollcommand=scroll.set)
+        scroll = RoundedScrollbar(table_area, self.tree.yview)
+        scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
+        self.tree.configure(yscrollcommand=scroll.set, xscrollcommand=horizontal_scroll.set)
         self.tree.bind("<Double-1>", lambda _e: self.edit_record())
         actions_bottom = tk.Frame(panel, bg=WHITE); actions_bottom.pack(fill="x", padx=10, pady=7)
         self.row_action_buttons = []
         if self.mode != "viewer" and self.account.role != "VIEWER":
-            b = ttk.Button(actions_bottom, text="Edit", command=self.edit_record); b.pack(side="left", padx=(0, 6)); self.row_action_buttons.append(b)
-            self.toggle_button = ttk.Button(actions_bottom, text="Aktif / Nonaktif", command=self.toggle_status); self.toggle_button.pack(side="left", padx=6); self.row_action_buttons.append(self.toggle_button)
+            b = RoundedToolbarButton(actions_bottom, "Edit", self.edit_record)
+            b.pack(side="left", padx=(0, 6), pady=2); self.row_action_buttons.append(b)
+            self.toggle_button = RoundedToolbarButton(actions_bottom, "Aktif / Nonaktif", self.toggle_status)
+            self.toggle_button.pack(side="left", padx=6, pady=2); self.row_action_buttons.append(self.toggle_button)
             if self.account.role == "SUPERVISOR":
-                b = ttk.Button(actions_bottom, text="Hapus", command=self.delete_record); b.pack(side="left", padx=6); self.row_action_buttons.append(b)
+                b = RoundedToolbarButton(actions_bottom, "Hapus", self.delete_record)
+                b.pack(side="left", padx=6, pady=2); self.row_action_buttons.append(b)
         self.row_count = tk.Label(actions_bottom, textvariable=self.status_text, bg=WHITE, fg=MUTED, font=("Segoe UI", 8))
         self.row_count.pack(side="left", padx=9)
         ttk.Label(actions_bottom, text="Baris per halaman").pack(side="right", padx=(6, 0))
