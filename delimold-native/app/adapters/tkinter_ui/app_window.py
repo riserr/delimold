@@ -108,9 +108,12 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
             style.theme_use("clam")
         except tk.TclError:
             pass
+        style.layout("Treeview", [("Treeview.treearea", {"sticky": "nswe"})])
         style.configure("Treeview", background=CARD, fieldbackground=CARD, foreground=INK,
-                        rowheight=29, bordercolor=LINE, font=("Segoe UI", 9))
+                        rowheight=29, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE,
+                        borderwidth=0, relief="flat", font=("Segoe UI", 9))
         style.configure("Treeview.Heading", background=WHITE, foreground=MUTED,
+                        bordercolor=LINE, lightcolor=LINE, darkcolor=LINE, borderwidth=0,
                         font=("Segoe UI", 8, "bold"), relief="flat", padding=(7, 8))
         style.map("Treeview", background=[("selected", "#355640")] , foreground=[("selected", INK)])
         style.configure("TCombobox", padding=6, fieldbackground=FIELD, background=WHITE, foreground=INK, arrowcolor=INK, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE)

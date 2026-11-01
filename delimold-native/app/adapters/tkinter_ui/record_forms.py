@@ -7,7 +7,7 @@ from tkinter import ttk
 from app.application.dto import RecordSaveRequest, UserSaveRequest
 from app.domain.validation import validate_status_transition
 from .error_presenter import present_error
-from .app_window_theme import INK
+from .app_window_theme import INK, WHITE
 from .catalog_config import FIELDS, TABS
 
 
@@ -16,10 +16,21 @@ class RecordFormsMixin:
         if not self._can_write():
             return
         dlg = tk.Toplevel(self.root); dlg.title(("Edit " if key else "Tambah ") + TABS[self.collection]); dlg.transient(self.root); dlg.grab_set()
-        dlg.geometry("560x640")
+        dlg.geometry("600x700")
+        dlg.minsize(540, 520)
         outer = ttk.Frame(dlg, padding=18); outer.pack(fill="both", expand=True)
         ttk.Label(outer, text=("Edit " if key else "Tambah ") + TABS[self.collection], font=("Segoe UI", 15, "bold"), foreground=INK).pack(anchor="w")
-        form = ttk.Frame(outer); form.pack(fill="both", expand=True, pady=12)
+        form_host = ttk.Frame(outer); form_host.pack(fill="both", expand=True, pady=12)
+        canvas = tk.Canvas(form_host, highlightthickness=0, bd=0, bg=WHITE)
+        scrollbar = ttk.Scrollbar(form_host, orient="vertical", command=canvas.yview)
+        form = ttk.Frame(canvas)
+        form_window = canvas.create_window((0, 0), window=form, anchor="nw")
+        form.bind("<Configure>", lambda _event: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda event: canvas.itemconfigure(form_window, width=event.width))
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        canvas.bind("<MouseWheel>", lambda event: canvas.yview_scroll(int(-event.delta / 120), "units"))
         entries = {}
         choice_maps = {}
         defaults = {}
