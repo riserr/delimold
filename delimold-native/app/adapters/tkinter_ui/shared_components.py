@@ -11,6 +11,40 @@ TAB_LABELS = {
 }
 
 
+class RoundedPanel(tk.Frame):
+    """Frame container with a rounded painted surface and normal Tk children."""
+
+    def __init__(self, parent, fill, border=LINE, radius=8, padx=0, pady=0):
+        self.fill = fill
+        self.border = border
+        self.radius = radius
+        self.outer_bg = parent.cget("bg")
+        super().__init__(parent, bg=self.outer_bg, bd=0, highlightthickness=0)
+        self.canvas = tk.Canvas(self, bg=self.outer_bg, bd=0, highlightthickness=0)
+        self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        inset = max(3, int(radius * 0.55))
+        self.content = tk.Frame(self, bg=fill, bd=0, highlightthickness=0,
+                                padx=padx, pady=pady)
+        self.content.pack(fill="both", expand=True, padx=inset, pady=inset)
+        self.bind("<Configure>", lambda _event: self._draw())
+        self._draw()
+
+    def _shape(self, x1, y1, x2, y2, radius, fill, outline):
+        r = min(radius, max(2, (x2-x1)//2), max(2, (y2-y1)//2))
+        points = [x1+r,y1, x2-r,y1, x2,y1+r, x2,y2-r,
+                  x2-r,y2, x1+r,y2, x1,y2-r, x1,y1+r]
+        self.canvas.create_polygon(points, smooth=True, splinesteps=18,
+                                   fill=fill, outline=outline)
+
+    def _draw(self):
+        self.canvas.delete("all")
+        width, height = max(self.winfo_width(), 2), max(self.winfo_height(), 2)
+        self._shape(0, 0, width, height, self.radius, self.border, self.border)
+        inset = 1
+        self._shape(inset, inset, width-inset, height-inset,
+                    max(2, self.radius-1), self.fill, self.fill)
+
+
 class SidebarNavItem(tk.Canvas):
     """Rounded, preview-matched navigation row with a clear active marker."""
 
@@ -56,7 +90,7 @@ class SidebarNavItem(tk.Canvas):
             fill = "#26352b"
         else:
             fill = WHITE
-        radius = 7
+        radius = 6
         points = [
             radius, 2, width-radius, 2, width-2, radius+2, width-2, height-radius-2,
             width-radius, height-2, radius, height-2, 2, height-radius-2, 2, radius+2,
@@ -202,30 +236,33 @@ def build_sidebar(parent, role, mode, selected, on_select, on_settings=None):
 
 def build_shared_footer(parent):
     """Keep the common policy note at the bottom of the shared sidebar."""
-    footer = tk.Frame(parent, bg=CARD, padx=10, pady=10)
+    footer = RoundedPanel(parent, fill=CARD, border=LINE, radius=7, padx=10, pady=8)
     footer.pack(fill="x", padx=11, pady=9)
-    tk.Label(footer, text="Satu sumber data.\nHak akses mengikuti peran.", bg=CARD, fg=MUTED,
-             justify="left", font=("Segoe UI", 8)).pack(anchor="w")
+    tk.Label(footer.content, text="Satu sumber data.\nHak akses mengikuti peran.",
+             bg=CARD, fg=MUTED, justify="left", font=("Segoe UI", 8)).pack(anchor="w")
     return footer
 
 
 def build_header(parent, role, mode):
-    header = tk.Frame(parent, bg=WHITE, height=46, highlightbackground=LINE, highlightthickness=1)
+    header = tk.Frame(parent, bg=WHITE, height=48, bd=0, highlightthickness=0)
     header.pack(fill="x")
     header.pack_propagate(False)
-    crumb = tk.Label(header, text="DELIMOLD · Data Cetakan Ban", bg=WHITE, fg=INK,
+    crumb = tk.Label(header, text="DELIMOLD · Data Cetakan Ban", bg=WHITE, fg=MUTED,
                      font=("Segoe UI", 9))
-    crumb.pack(side="left", padx=17)
+    crumb.pack(side="left", padx=20)
     label = "TENDERLOIN  ·  %s" % role if mode != "viewer" else "SALAK  ·  Viewer"
-    tk.Label(header, text=label, bg=WHITE, fg=INK, font=("Segoe UI", 8)).pack(side="right", padx=14)
+    tk.Label(header, text=label, bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack(side="right", padx=14)
+    tk.Frame(header, bg=LINE, height=1).pack(side="bottom", fill="x")
     return header, crumb
 
 
 def build_database_status(parent, mode):
-    frame = tk.Frame(parent, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
-    frame.pack(fill="x", pady=(13, 12))
-    tk.Label(frame, text="●", bg=WHITE, fg=GREEN, font=("Segoe UI", 12)).pack(side="left", padx=(12, 6), pady=9)
+    frame = RoundedPanel(parent, fill=WHITE, border=LINE, radius=6, padx=11, pady=7)
+    frame.pack(fill="x", pady=(14, 11))
+    tk.Label(frame.content, text="●", bg=WHITE, fg=GREEN,
+             font=("Segoe UI", 10)).pack(side="left", padx=(0, 8))
     text = "Salinan baca-saja · publikasi SALAK" if mode == "viewer" else "Data utama · TENDERLOIN"
-    label = tk.Label(frame, text=text, bg=WHITE, fg=GREEN, font=("Segoe UI", 9, "bold"))
-    label.pack(side="left", pady=9)
+    label = tk.Label(frame.content, text=text, bg=WHITE, fg=GREEN,
+                     font=("Segoe UI", 9, "bold"))
+    label.pack(side="left")
     return frame, label
