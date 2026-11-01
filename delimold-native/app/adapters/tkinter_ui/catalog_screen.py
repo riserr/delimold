@@ -6,7 +6,7 @@ from tkinter import messagebox, ttk
 from app.application.dto import CatalogPageQuery, FilterOptionsQuery, SnapshotReadRequest
 from .error_presenter import present_error
 from .app_window_theme import CARD, GREEN, LINE, MUTED, WHITE
-from .shared_components import RoundedPanel
+from .shared_components import RoundedField, RoundedPanel
 from .catalog_config import FILTER_FIELDS
 
 
@@ -335,8 +335,10 @@ class CatalogScreenMixin:
             self.filter_fields_frame.grid_columnconfigure(index % 4, weight=1)
             tk.Label(cell, text=label, bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
             variable = tk.StringVar(value="Semua")
-            box = ttk.Combobox(cell, textvariable=variable, state="readonly")
-            box.pack(fill="x")
+            rounded = RoundedField(cell, ttk.Combobox, textvariable=variable,
+                                   state="readonly", style="Rounded.TCombobox")
+            rounded.pack(fill="x")
+            box = rounded.control
             box.bind("<<ComboboxSelected>>", lambda _event: self._filter_changed())
             self.filter_vars[field] = variable
             self.filter_boxes[field] = box
