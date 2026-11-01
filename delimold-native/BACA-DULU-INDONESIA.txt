@@ -1,28 +1,26 @@
-DELIMOLD Native Python — TENDERLOIN
+DELIMOLD Native — TENDERLOIN Master dan SALAK Viewer
 
-Tidak perlu memasang Python, browser, atau aplikasi tambahan.
+Tidak perlu memasang Python atau aplikasi tambahan.
 
-PERSYARATAN WINDOWS 7
-Untuk Windows 7 32-bit, gunakan Windows 7 SP1 dan pastikan pembaruan KB2533623 sudah terpasang. Paket menyertakan runtime Universal C Runtime x86.
+PERSYARATAN
+Windows 7 SP1 x86. Paket menggunakan Python 3.8.10 32-bit, PyInstaller 6.0.0, dan menyertakan Universal C Runtime x86.
 
-CARA MENJALANKAN
-1. Ekstrak folder TENDERLOIN ke komputer TENDERLOIN dan pertahankan susunan foldernya.
-2. Klik ganda TENDERLOIN\APLIKASI\DELIMOLD.exe.
-   - Folder APLIKASI berisi program, source, konfigurasi, dan katalog data awal.
-   - Subfolder APLIKASI\RUNTIME berisi runtime Python portable.
-   - Folder TENDERLOIN\DATABASE menyimpan database akun dan seluruh data aplikasi.
-   - Jangan menghapus folder DATABASE saat memperbarui folder APLIKASI.
-3. Jika database belum ada, program membuat skema awal di TENDERLOIN\DATABASE\delimold.sqlite3.
-4. Buat akun Supervisor pertama dan masuk. Setelah itu, katalog awal dimuat ke database.
-5. Atur folder publikasi di SALAK melalui menu Atur lokasi data di sidebar sebagai Supervisor.
-6. Program membuat subfolder published-python di folder SALAK yang dipilih.
+PEMASANGAN PAKET
+1. Ekstrak folder TENDERLOIN ke komputer data TENDERLOIN.
+2. Salin isi folder SALAK ke lokasi share SALAK. Pertahankan folder published di samping DELIMOLD-Viewer.exe.
+3. Jangan gabungkan atau memindahkan isi folder RUNTIME. Setiap EXE memakai runtime portable yang ada di folder paketnya.
 
-Database utama dibuat di TENDERLOIN\DATABASE\delimold.sqlite3. Database lama dari %LOCALAPPDATA%\DELIMOLD\delimold.sqlite3 akan disalin otomatis saat pembaruan pertama. File lama tidak dihapus. Buat cadangan database secara berkala dan jangan hapus folder DATABASE saat memperbarui aplikasi.
+MEMULAI DI TENDERLOIN
+1. Buka TENDERLOIN\APLIKASI\Pilih-Published-SALAK.exe.
+2. Pilih folder published yang sudah ada pada share SALAK, lalu klik Simpan lokasi.
+   Pemilih menyimpan pilihan di %LOCALAPPDATA%\DELIMOLD\config.json. Pemilih tidak membuat folder SALAK.
+3. Buka TENDERLOIN\APLIKASI\DELIMOLD.exe.
+4. Buat akun Supervisor pertama. Sesudah akun berhasil dibuat, katalog awal akan dimuat.
 
-Konfigurasi pilihan pengguna disimpan di %LOCALAPPDATA%\DELIMOLD\config.json.
+MEMBUKA VIEWER DI SALAK
+Jalankan SALAK\DELIMOLD-Viewer.exe. Viewer hanya membaca SALAK\published\catalog.json, tidak membuka database TENDERLOIN, dan tidak menyediakan aksi edit. Viewer menampilkan snapshot terakhir yang berhasil diterbitkan; TENDERLOIN tetap menjadi sumber data utama.
 
-Jika aplikasi gagal mulai, periksa %LOCALAPPDATA%\DELIMOLD\startup.log.
+DATA
+Database akun dan data master berada di TENDERLOIN\DATABASE\delimold.sqlite3. Jangan menghapus folder DATABASE saat memperbarui aplikasi. Folder SALAK\published berisi snapshot baca-saja yang dibuat oleh TENDERLOIN saat publikasi pertama berhasil.
 
-Paket ini berfokus pada pembukaan aplikasi utama di TENDERLOIN. Tidak ada file BAT di dalam paket. Mode Engineer akan disiapkan setelah aplikasi utama berhasil dibuka.
-
-Seed checkpoint berisi 869 cetakan, 108 container, dan 89 pattern; seed tidak berisi akun lama, project aktif, atau pembelian live.
+Jika share SALAK sedang tidak tersedia, data lokal di TENDERLOIN tetap dapat digunakan. Publikasi dicoba kembali saat koneksi pulih. Jika aplikasi gagal mulai, periksa %LOCALAPPDATA%\DELIMOLD\startup.log.
