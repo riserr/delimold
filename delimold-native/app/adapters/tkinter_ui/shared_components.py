@@ -31,10 +31,17 @@ class RoundedPanel(tk.Frame):
 
     def _shape(self, x1, y1, x2, y2, radius, fill, outline):
         r = min(radius, max(2, (x2-x1)//2), max(2, (y2-y1)//2))
-        points = [x1+r,y1, x2-r,y1, x2,y1+r, x2,y2-r,
-                  x2-r,y2, x1+r,y2, x1,y2-r, x1,y1+r]
-        self.canvas.create_polygon(points, smooth=True, splinesteps=18,
-                                   fill=fill, outline=outline)
+        x2 -= 1
+        y2 -= 1
+        # Build the round rectangle from overlapping rectangles and circles.
+        # This avoids the broken spline edges produced by Tk on scaled Windows displays.
+        self.canvas.create_rectangle(x1+r, y1, x2-r, y2,
+                                     fill=fill, outline=fill, width=0)
+        self.canvas.create_rectangle(x1, y1+r, x2, y2-r,
+                                     fill=fill, outline=fill, width=0)
+        for left, top in ((x1, y1), (x2-2*r, y1), (x1, y2-2*r), (x2-2*r, y2-2*r)):
+            self.canvas.create_oval(left, top, left+2*r, top+2*r,
+                                    fill=fill, outline=fill, width=0)
 
     def _draw(self):
         self.canvas.delete("all")
