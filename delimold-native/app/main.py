@@ -19,7 +19,8 @@ from app.application.use_cases import DelimoldUseCases
 
 def application_directory():
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent / "APLIKASI"
+        # PyInstaller places DELIMOLD.exe directly inside APLIKASI.
+        return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent.parent
 
 

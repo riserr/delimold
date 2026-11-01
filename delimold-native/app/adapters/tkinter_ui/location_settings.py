@@ -1,10 +1,11 @@
 """Native, first-run location setup for the TENDERLOIN desktop app."""
-import json
 import os
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
 from uuid import uuid4
+
+from app.adapters.configuration import save_config
 
 
 DARK = "#151d18"
@@ -33,13 +34,6 @@ def _writable_folder(folder, create=True):
         except Exception:
             pass
         raise
-
-
-def _save_config(base, config):
-    target = Path(base) / "config.json"
-    temporary = target.with_name(target.name + ".tmp")
-    temporary.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(str(temporary), str(target))
 
 
 class _RoundedButton(tk.Canvas):
@@ -232,7 +226,7 @@ def configure_master_paths(root, base, config, force=False):
             updated = dict(config)
             updated.update({"mode": "master", "database_path": str(database),
                             "publish_path": str(publish), "publish_on_start": True})
-            _save_config(base, updated)
+            save_config(updated)
             result["config"] = updated
             done.set("Lokasi tersimpan. DELIMOLD sedang disiapkan…")
             for child in root.winfo_children():

@@ -18,7 +18,7 @@ TENDERLOIN/
     └── RUNTIME/       # Python runtime dan berkas pendukung portable
 ```
 
-Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKASI` dan subfolder `APLIKASI\RUNTIME` tetap utuh. Folder `app` berisi source Python yang mudah diperiksa; EXE menjalankan hasil build dari source tersebut dan tidak membaca file `.py` saat dibuka. `RUNTIME` menyediakan komponen portable agar komputer tidak perlu memasang apa pun. Database kerja tetap disimpan terpisah di `%LOCALAPPDATA%\DELIMOLD\delimold.sqlite3`.
+Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKASI` dan subfolder `APLIKASI\RUNTIME` tetap utuh. Folder `app` berisi source Python yang mudah diperiksa; EXE menjalankan hasil build dari source tersebut dan tidak membaca file `.py` saat dibuka. `RUNTIME` menyediakan komponen portable agar komputer tidak perlu memasang apa pun. Konfigurasi pilihan pengguna dan database kerja disimpan di `%LOCALAPPDATA%\DELIMOLD`, sehingga tetap tersimpan tanpa menulis ke folder program.
 
 ## Lokasi data
 
