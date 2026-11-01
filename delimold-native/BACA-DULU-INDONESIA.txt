@@ -28,3 +28,4 @@ DATA DAN KOMPATIBILITAS
 - Seed tidak berisi akun lama, project aktif, atau data pembelian live. Database aplikasi lama tidak otomatis dikonversi. Jangan mengganti data operasional sebelum database live diperiksa dan dipindahkan.
 - Pembelian hanya untuk Supervisor dan tidak diterbitkan ke SALAK.
 - Paket dibangun dengan Python 3.8 32-bit agar mendukung Windows x86/x64 lama. Perlu pemeriksaan buka/jalankan pada komputer Windows 7 kantor sebelum digunakan operasional.
+- Launcher menangani folder share TENDERLOIN dan menahan jendela jika aplikasi gagal dimulai. Log startup ada di %LOCALAPPDATA%\DELIMOLD\startup.log.
