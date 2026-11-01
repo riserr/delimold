@@ -416,11 +416,17 @@ class NativeApp:
         can_edit = self.mode != "viewer" and self.account.get("role") != "VIEWER" and self.collection != "history"
         if self.collection == "purchases" and self.account.get("role") != "SUPERVISOR":
             can_edit = False
-        for key, button in self.toolbar_buttons.items():
+        # Re-pack every visible action in one fixed order. Buttons can be hidden
+        # and restored when the user changes collections; relying on Tk's old
+        # pack order made restored actions jump to the end of the toolbar.
+        for button in self.toolbar_buttons.values():
+            button.pack_forget()
+        for key in ("add", "import", "export", "print"):
+            button = self.toolbar_buttons.get(key)
+            if button is None:
+                continue
             allowed = can_edit if key in ("add", "import") else True
-            if not allowed:
-                button.pack_forget()
-            elif not button.winfo_manager():
+            if allowed:
                 button.pack(side="left", padx=(9 if key == "add" else 0, 6), pady=7)
 
     def _fetch_catalog(self):
