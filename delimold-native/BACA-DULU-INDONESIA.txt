@@ -8,6 +8,7 @@ CARA MENJALANKAN
 3. Saat pertama dibuka, pilih lokasi database lokal dan folder publikasi di SALAK.
 4. Program membuat subfolder published-python di folder SALAK yang dipilih.
 5. Jika database masih kosong, katalog checkpoint v12 dimuat otomatis dan program meminta pembuatan akun Supervisor pertama.
+6. Untuk mengubah lokasi setelah itu, buka menu Atur lokasi data di sidebar sebagai Supervisor.
 
 Jangan hapus atau timpa database kantor yang sudah berisi data. Database lokal disimpan di %LOCALAPPDATA%\DELIMOLD\delimold.sqlite3.
 
