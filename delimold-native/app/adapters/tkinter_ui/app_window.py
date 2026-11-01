@@ -253,7 +253,7 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
             tablebox, lambda *args: self.tree.xview(*args), orient="horizontal")
         horizontal_scroll.pack(side="bottom", fill="x", padx=(5, 20), pady=(0, 3))
         table_area = tk.Frame(tablebox, bg=WHITE); table_area.pack(fill="both", expand=True)
-        self.tree = ttk.Treeview(table_area, show="headings", selectmode="browse")
+        self.tree = ttk.Treeview(table_area, show="headings", selectmode="browse", height=7)
         self.tree.pack(side="left", fill="both", expand=True)
         scroll = RoundedScrollbar(table_area, self.tree.yview)
         scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
