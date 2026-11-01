@@ -51,19 +51,39 @@ def log_startup_error(error):
         return "log startup tidak dapat ditulis"
 
 
+def log_startup_event(message):
+    local_app_data = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    try:
+        folder = Path(local_app_data) / "DELIMOLD"
+        folder.mkdir(parents=True, exist_ok=True)
+        with (folder / "startup.log").open("a", encoding="utf-8") as stream:
+            stream.write("[%s] %s\n" % (datetime.now().isoformat(), message))
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--client", action="store_true", help="jalankan client Engineer dari share TENDERLOIN")
     parser.add_argument("--configure", action="store_true", help="atur lokasi database dan publikasi SALAK")
     args, _unknown = parser.parse_known_args()
     base = app_root()
+    log_startup_event("Program mulai; argumen: %s" % " ".join(sys.argv[1:]))
     config = load_config(base)
     root = tk.Tk()
     root.withdraw()
     if args.configure:
         try:
+            # A transient setup dialog can stay hidden when its Tk owner is
+            # withdrawn, so map the owner before creating the dialog.
+            root.title("DELIMOLD · Pengaturan lokasi")
+            root.geometry("1x1+0+0")
+            root.deiconify()
+            root.update_idletasks()
+            log_startup_event("Membuka wizard lokasi database dan SALAK")
             configured = configure_master_paths(root, base, config, force=True)
             if configured:
+                log_startup_event("Wizard lokasi berhasil disimpan")
                 messagebox.showinfo("Pengaturan tersimpan", "Lokasi database dan publikasi sudah disimpan.", parent=root)
         except Exception as exc:
             log_path = log_startup_error(exc)
@@ -76,12 +96,18 @@ def main():
     mode = "client" if args.client else config.get("mode", "master")
     if mode == "master" and not config.get("publish_path"):
         try:
+            root.title("DELIMOLD · Pengaturan lokasi")
+            root.geometry("1x1+0+0")
+            root.deiconify()
+            root.update_idletasks()
+            log_startup_event("Setup awal: membuka wizard lokasi database dan SALAK")
             config = configure_master_paths(root, base, config)
         except Exception as exc:
             messagebox.showerror("Pengaturan DELIMOLD", str(exc), parent=root)
             root.destroy()
             return 1
         if not config:
+            log_startup_event("Wizard lokasi dibatalkan; aplikasi ditutup")
             root.destroy()
             return 0
     store = None
@@ -114,6 +140,7 @@ def main():
             snapshot = {"snapshot_path": str(resolve_path(base, config.get("snapshot_path", "published/catalog.json")))}
         else:
             raise ValueError("Mode config harus master, client, atau viewer")
+        log_startup_event("Mode %s siap; membuka antarmuka DELIMOLD" % mode)
         root.deiconify()
         NativeApp(root, config, store=store, api_client=client, viewer_snapshot=snapshot, api_server=api)
         root.mainloop()
