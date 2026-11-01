@@ -6,23 +6,26 @@ Paket Windows portable tanpa browser dan tanpa instalasi. Program dijalankan di 
 
 ```text
 TENDERLOIN/
-└── APLIKASI/
-    ├── DELIMOLD.exe   # aplikasi yang dibuka pengguna
-    ├── config.json    # pengaturan TENDERLOIN
-    ├── app/            # source Python DELIMOLD, untuk dibedah/dipelajari
-    │   ├── main.py
-    │   ├── domain/
-    │   ├── application/
-    │   ├── adapters/
-    │   └── data/seed/catalog.json
-    └── RUNTIME/       # Python runtime dan berkas pendukung portable
+├── APLIKASI/
+│   ├── DELIMOLD.exe   # aplikasi yang dibuka pengguna
+│   ├── config.json    # konfigurasi awal
+│   ├── app/           # source Python DELIMOLD, untuk dibedah/dipelajari
+│   │   ├── main.py
+│   │   ├── domain/
+│   │   ├── application/
+│   │   ├── adapters/
+│   │   └── data/seed/catalog.json
+│   └── RUNTIME/       # Python runtime dan berkas pendukung portable
+└── DATABASE/
+    ├── README.txt
+    └── delimold.sqlite3  # database utama; dibuat saat aplikasi pertama kali dibuka
 ```
 
-Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKASI` dan subfolder `APLIKASI\RUNTIME` tetap utuh. Folder `app` berisi source Python yang mudah diperiksa; EXE menjalankan hasil build dari source tersebut dan tidak membaca file `.py` saat dibuka. `RUNTIME` menyediakan komponen portable agar komputer tidak perlu memasang apa pun. Konfigurasi pilihan pengguna dan database kerja disimpan di `%LOCALAPPDATA%\DELIMOLD`, sehingga tetap tersimpan tanpa menulis ke folder program.
+Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKASI`, `APLIKASI\RUNTIME`, dan `DATABASE` tetap utuh. Folder `app` berisi source Python yang mudah diperiksa; EXE menjalankan hasil build dari source tersebut dan tidak membaca file `.py` saat dibuka. `RUNTIME` menyediakan komponen portable agar komputer tidak perlu memasang apa pun. Database kerja berada di `TENDERLOIN\DATABASE\delimold.sqlite3`, terpisah dari aplikasi agar pembaruan folder `APLIKASI` tidak menghapus akun dan data. Path database disimpan relatif terhadap root TENDERLOIN. Konfigurasi pribadi tetap disimpan di `%LOCALAPPDATA%\DELIMOLD\config.json`.
 
 ## Lokasi data
 
-Saat pertama dibuka, wizard native meminta file database lokal TENDERLOIN dan folder App bersama di SALAK. Database awal diarahkan ke `%LOCALAPPDATA%\DELIMOLD\delimold.sqlite3`. Snapshot baca-saja diterbitkan ke subfolder `published-python` yang dibuat di lokasi SALAK pilihan.
+Saat pertama dibuka, wizard native meminta lokasi database di folder `TENDERLOIN\DATABASE` dan folder App bersama di SALAK. Database dibuat sebagai `TENDERLOIN\DATABASE\delimold.sqlite3`. Database lama dari lokasi default `%LOCALAPPDATA%\DELIMOLD\delimold.sqlite3` dipindahkan dengan aman saat pembaruan pertama. Snapshot baca-saja diterbitkan ke subfolder `published-python` yang dibuat di lokasi SALAK pilihan.
 
 Setelah login Supervisor, pilih `Atur lokasi data` di sidebar untuk membuka layar pengaturan yang sama lagi.
 Pengaturan dari dalam aplikasi ditampilkan di jendela utama yang sama. Simpan atau tutup layar pengaturan untuk kembali ke aplikasi.

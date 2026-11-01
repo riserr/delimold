@@ -8,7 +8,7 @@ from tkinter import messagebox
 
 from app.adapters.salak_publisher import JsonSnapshotPublisher, JsonSnapshotReader
 from app.adapters.seed_catalog_reader import JsonSeedCatalogReader
-from app.adapters.configuration import load_config, local_data_directory, resolve_path
+from app.adapters.configuration import load_config, local_data_directory, resolve_path, save_config
 from app.adapters.excel_adapter import OpenpyxlWorkbookAdapter
 from app.adapters.pdf_adapter import ReportLabPdfAdapter
 from app.adapters.sqlite_repository import SQLiteCatalogRepository
@@ -70,6 +70,15 @@ def main():
             pdf_exporter = ReportLabPdfAdapter()
             if config["mode"] == "master":
                 database_path = resolve_path(base, config["database_path"])
+                package_database = (base.parent / "DATABASE" / "delimold.sqlite3").resolve()
+                legacy_database = (local_data_directory() / "delimold.sqlite3").resolve()
+                if database_path and database_path.resolve() == legacy_database and legacy_database.is_file():
+                    if not package_database.exists():
+                        SQLiteCatalogRepository.migrate_database(legacy_database, package_database)
+                    if package_database.exists():
+                        config["database_path"] = "../DATABASE/delimold.sqlite3"
+                        save_config(config)
+                        database_path = package_database
                 repository = SQLiteCatalogRepository(database_path)
                 seed_path = resolve_path(base, config.get("seed_path", "seed/catalog.json"))
                 if seed_path and not seed_path.is_file():

@@ -1,6 +1,6 @@
 {
   "mode": "master",
-  "database_path": "",
+  "database_path": "../DATABASE/delimold.sqlite3",
   "seed_path": "app/data/seed/catalog.json",
   "publish_path": "",
   "publish_on_start": true

@@ -1,5 +1,6 @@
 """SQLite implementation of the application repository port."""
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -14,6 +15,40 @@ COLLECTIONS = ("molds", "patterns", "containers", "stickers", "pattern_art",
 
 
 class SQLiteCatalogRepository(CatalogRepository):
+    @staticmethod
+    def migrate_database(source_path, target_path):
+        """Copy a live SQLite database safely, including committed WAL changes."""
+        source = Path(source_path)
+        target = Path(target_path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_name(target.name + ".migrating")
+        source_connection = None
+        target_connection = None
+        try:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+            source_connection = sqlite3.connect(str(source), timeout=20)
+            target_connection = sqlite3.connect(str(temporary), timeout=20)
+            source_connection.backup(target_connection)
+            target_connection.close()
+            target_connection = None
+            source_connection.close()
+            source_connection = None
+            os.replace(str(temporary), str(target))
+        except (OSError, sqlite3.Error) as exc:
+            try:
+                temporary.unlink()
+            except OSError:
+                pass
+            raise StorageError("Database lama tidak dapat dipindahkan ke folder DATABASE.") from exc
+        finally:
+            if source_connection is not None:
+                source_connection.close()
+            if target_connection is not None:
+                target_connection.close()
+
     def __init__(self, database_path):
         self.path = Path(database_path)
         self.path.parent.mkdir(parents=True, exist_ok=True)

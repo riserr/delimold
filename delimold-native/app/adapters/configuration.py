@@ -17,7 +17,8 @@ def load_config(application_dir):
     user_path = local_data_directory() / "config.json"
     packaged_path = Path(application_dir) / "config.json"
     path = user_path if user_path.exists() else packaged_path
-    defaults = {"mode": "master", "database_path": str(local_data_directory() / "delimold.sqlite3"),
+    package_database = Path(application_dir).parent / "DATABASE" / "delimold.sqlite3"
+    defaults = {"mode": "master", "database_path": str(package_database),
                 "seed_path": "seed/catalog.json", "publish_path": "", "publish_on_start": True,
                 "snapshot_path": "published-python/catalog.json"}
     if not path.exists():
@@ -29,7 +30,7 @@ def load_config(application_dir):
             raise ValueError("config.json harus berupa objek JSON")
         defaults.update(loaded)
         if not defaults.get("database_path"):
-            defaults["database_path"] = str(local_data_directory() / "delimold.sqlite3")
+            defaults["database_path"] = str(package_database)
         return defaults
     except (OSError, ValueError) as exc:
         raise ConfigurationError("config.json tidak dapat dibaca: %s" % exc) from exc

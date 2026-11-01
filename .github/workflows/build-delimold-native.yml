@@ -32,6 +32,9 @@ jobs:
           $root = "release/TENDERLOIN"
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           New-Item -ItemType Directory -Force -Path "$root/APLIKASI" | Out-Null
+          $databaseRoot = "release/DATABASE"
+          New-Item -ItemType Directory -Force -Path $databaseRoot | Out-Null
+          Copy-Item -Recurse -Force "DATABASE/*" $databaseRoot
           Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/APLIKASI/DELIMOLD.exe"
           Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/APLIKASI/RUNTIME"
           Copy-Item -Recurse -Force "app" "$root/APLIKASI/app"

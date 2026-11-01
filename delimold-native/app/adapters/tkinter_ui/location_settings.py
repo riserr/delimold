@@ -85,8 +85,7 @@ def configure_master_paths(root, base, config, force=False):
         if not default_database.is_absolute():
             default_database = base / default_database
     else:
-        local_app_data = os.environ.get("LOCALAPPDATA") or str(base.parent)
-        default_database = Path(local_app_data) / "DELIMOLD" / "delimold.sqlite3"
+        default_database = base.parent / "DATABASE" / "delimold.sqlite3"
     default_publish = config.get("publish_path", "")
 
     root.title("DELIMOLD · Data Cetakan Ban")
@@ -212,6 +211,8 @@ def configure_master_paths(root, base, config, force=False):
             database = Path(database_var.get().strip()).expanduser()
             if not database.is_absolute():
                 database = (base / database).resolve()
+            else:
+                database = database.resolve()
             if str(database).startswith(("\\\\", "//")):
                 raise ValueError("Database harus berada di disk lokal TENDERLOIN.")
             if database.exists() and database.is_dir():
@@ -223,8 +224,14 @@ def configure_master_paths(root, base, config, force=False):
             publish = Path(publish_var.get().strip())
             _writable_folder(publish)
 
+            stored_database = str(database)
+            try:
+                database.relative_to(base.parent.resolve())
+                stored_database = os.path.relpath(str(database), str(base))
+            except ValueError:
+                pass
             updated = dict(config)
-            updated.update({"mode": "master", "database_path": str(database),
+            updated.update({"mode": "master", "database_path": stored_database,
                             "publish_path": str(publish), "publish_on_start": True})
             save_config(updated)
             result["config"] = updated
