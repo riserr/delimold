@@ -23,34 +23,56 @@ jobs:
           python -m pip install pip==24.3.1
           python -m pip install -r delimold-native/requirements-build.txt
           python -c "import struct, sys; assert sys.version_info[:3] == (3, 8, 10); assert struct.calcsize('P') * 8 == 32; print(sys.version)"
-      - name: Build the native desktop executable
+      - name: Build the TENDERLOIN master executable
         working-directory: delimold-native
-        run: python -m PyInstaller --noconfirm --clean --onedir --contents-directory RUNTIME --paths . --windowed --name DELIMOLD app/main.py
-      - name: Assemble direct-launch TENDERLOIN package without BAT files
+        run: python -m PyInstaller --noconfirm --clean --onedir --contents-directory RUNTIME --paths . --windowed --name DELIMOLD --distpath build/dist --workpath build/work/master --specpath build/spec app/main.py
+      - name: Build the SALAK read-only viewer executable
+        working-directory: delimold-native
+        run: python -m PyInstaller --noconfirm --clean --onedir --contents-directory RUNTIME --paths . --windowed --name DELIMOLD-Viewer --distpath build/dist --workpath build/work/viewer --specpath build/spec app/viewer_main.py
+      - name: Build the SALAK folder selector executable
+        working-directory: delimold-native
+        run: python -m PyInstaller --noconfirm --clean --onedir --contents-directory RUNTIME --paths . --windowed --name Pilih-Published-SALAK --distpath build/dist --workpath build/work/selector --specpath build/spec tools/select_salak.py
+      - name: Assemble TENDERLOIN and SALAK Windows x86 packages
         shell: pwsh
         working-directory: delimold-native
         run: |
-          $root = "release/TENDERLOIN"
-          New-Item -ItemType Directory -Force -Path $root | Out-Null
-          New-Item -ItemType Directory -Force -Path "$root/APLIKASI" | Out-Null
-          Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/APLIKASI/DELIMOLD.exe"
-          Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/APLIKASI/RUNTIME"
+          $release = "release"
+          $master = "$release/TENDERLOIN/APLIKASI"
+          $viewer = "$release/SALAK"
+          New-Item -ItemType Directory -Force -Path $master | Out-Null
+          New-Item -ItemType Directory -Force -Path $viewer | Out-Null
+
+          Copy-Item "build/dist/DELIMOLD/DELIMOLD.exe" "$master/DELIMOLD.exe"
+          Copy-Item -Recurse -Force "build/dist/DELIMOLD/RUNTIME" "$master/RUNTIME"
+          Copy-Item "build/dist/Pilih-Published-SALAK/Pilih-Published-SALAK.exe" "$master/Pilih-Published-SALAK.exe"
+          Copy-Item -Recurse -Force "build/dist/Pilih-Published-SALAK/RUNTIME/*" "$master/RUNTIME"
+
+          Copy-Item "build/dist/DELIMOLD-Viewer/DELIMOLD-Viewer.exe" "$viewer/DELIMOLD-Viewer.exe"
+          Copy-Item -Recurse -Force "build/dist/DELIMOLD-Viewer/RUNTIME" "$viewer/RUNTIME"
+          Copy-Item "config.master.example.json" "$master/config.json"
+          Copy-Item "config.viewer.example.json" "$viewer/config.json"
+
           $ucrt = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\Redist\ucrt\DLLs\x86"
           if (-not (Test-Path $ucrt)) { throw "Universal CRT x86 dari Windows SDK tidak ditemukan: $ucrt" }
-          Get-ChildItem -Path $ucrt -Filter "*.dll" | Copy-Item -Destination "$root/APLIKASI" -Force
-          Copy-Item "config.master.example.json" "$root/APLIKASI/config.json"
+          Get-ChildItem -Path $ucrt -Filter "*.dll" | Copy-Item -Destination $master -Force
+          Get-ChildItem -Path $ucrt -Filter "*.dll" | Copy-Item -Destination $viewer -Force
+
           if (Test-Path "app/data/seed/catalog.json") {
-            New-Item -ItemType Directory -Force -Path "$root/APLIKASI/app/data/seed" | Out-Null
-            Copy-Item "app/data/seed/catalog.json" "$root/APLIKASI/app/data/seed/catalog.json"
+            New-Item -ItemType Directory -Force -Path "$master/app/data/seed" | Out-Null
+            Copy-Item "app/data/seed/catalog.json" "$master/app/data/seed/catalog.json"
           }
-          New-Item -ItemType Directory -Force -Path "$root/DATABASE" | Out-Null
+
+          New-Item -ItemType Directory -Force -Path "$release/TENDERLOIN/DATABASE" | Out-Null
           python -c "from app.adapters.sqlite_repository import SQLiteCatalogRepository; db = SQLiteCatalogRepository(r'release/TENDERLOIN/DATABASE/delimold.sqlite3'); db.close()"
-          Copy-Item "DATABASE/README.txt" "$root/DATABASE/README.txt"
-          Copy-Item "BACA-DULU-INDONESIA.txt" "release/BACA-DULU.txt"
+          Copy-Item "DATABASE/README.txt" "$release/TENDERLOIN/DATABASE/README.txt"
+          New-Item -ItemType Directory -Force -Path "$viewer/published" | Out-Null
+          "Snapshot publik DELIMOLD dari TENDERLOIN disimpan di folder ini sebagai catalog.json." | Set-Content -Encoding UTF8 "$viewer/published/README.txt"
+          Copy-Item "BACA-DULU-INDONESIA.txt" "$release/BACA-DULU.txt"
+
           $pythonVersion = python -c "import sys; print(sys.version.split()[0])"
           $pyinstallerVersion = python -c "import PyInstaller; print(PyInstaller.__version__)"
-          @("Target: Windows x86", "Python: $pythonVersion (32-bit)", "PyInstaller: $pyinstallerVersion", "Source commit: $env:GITHUB_SHA") | Set-Content -Encoding UTF8 "release/BUILD-INFO.txt"
-          Compress-Archive -Path "release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
+          @("Target: Windows x86", "Python: $pythonVersion (32-bit)", "PyInstaller: $pyinstallerVersion", "Executables: DELIMOLD.exe, Pilih-Published-SALAK.exe, DELIMOLD-Viewer.exe", "Source commit: $env:GITHUB_SHA") | Set-Content -Encoding UTF8 "$release/BUILD-INFO.txt"
+          Compress-Archive -Path "$release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
       - uses: actions/upload-artifact@v4
         with:
           name: DELIMOLD-Native-Python-Windows-x86
