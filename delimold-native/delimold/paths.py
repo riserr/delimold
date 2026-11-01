@@ -174,7 +174,7 @@ def configure_master_paths(root, base, config, force=False):
     db_button = _RoundedButton(database_row, "Pilih…", browse_database)
     db_button.pack(side="right")
     tk.Label(card, text="Disimpan lokal pada komputer TENDERLOIN.", bg=CARD, fg=MUTED,
-             font=("Segoe UI", 8)).pack(anchor="w", padx=(20, 0), pady=(8, 18))
+             font=("Segoe UI", 8)).pack(anchor="w", padx=(160, 0), pady=(8, 18))
 
     tk.Frame(card, bg=LINE, height=1).pack(fill="x", pady=(0, 16))
     tk.Label(card, text="Publikasi SALAK", bg=CARD, fg=TEXT,
@@ -202,7 +202,7 @@ def configure_master_paths(root, base, config, force=False):
     publish_button = _RoundedButton(publish_row, "Cari di SALAK…", browse_publish)
     publish_button.pack(side="right")
     tk.Label(card, text="Jika memilih folder App, subfolder published-python dibuat otomatis.",
-             bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", padx=(20, 0), pady=(8, 18))
+             bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", padx=(160, 0), pady=(8, 18))
 
     footer = tk.Frame(card, bg=CARD)
     footer.pack(fill="x", side="bottom", pady=(16, 0))
