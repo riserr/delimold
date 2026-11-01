@@ -4,10 +4,10 @@ Tidak perlu memasang Python, browser, atau aplikasi tambahan.
 
 CARA MENJALANKAN
 1. Ekstrak folder TENDERLOIN ke komputer TENDERLOIN dan pertahankan susunan foldernya.
-2. Klik ganda TENDERLOIN\DELIMOLD.exe.
-   - APLIKASI berisi konfigurasi DELIMOLD dan katalog data awal.
-   - RUNTIME berisi runtime Python portable yang dibutuhkan aplikasi.
-   - Jangan memindahkan atau menghapus salah satu folder tersebut.
+2. Klik ganda TENDERLOIN\APLIKASI\DELIMOLD.exe.
+   - Folder APLIKASI berisi program, konfigurasi, dan katalog data awal.
+   - Subfolder APLIKASI\RUNTIME berisi runtime Python portable.
+   - Jangan memindahkan atau menghapus kedua folder tersebut.
 3. Saat pertama dibuka, pilih lokasi database lokal dan folder publikasi di SALAK.
 4. Program membuat subfolder published-python di folder SALAK yang dipilih.
 5. Jika database masih kosong, katalog checkpoint v12 dimuat otomatis dan program meminta pembuatan akun Supervisor pertama.
