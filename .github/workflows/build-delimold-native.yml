@@ -39,15 +39,90 @@ jobs:
           }
           @'
           @echo off
-          start "" /D "%~dp0App" "%~dp0App\DELIMOLD.exe"
+          setlocal
+          pushd "%~dp0"
+          if errorlevel 1 goto share_error
+          if not exist "App\DELIMOLD.exe" (
+            echo DELIMOLD.exe tidak ditemukan di folder App.
+            set "APP_EXIT=1"
+            goto launch_error
+          )
+          echo Membuka DELIMOLD dari TENDERLOIN...
+          start /wait "" "App\DELIMOLD.exe"
+          set "APP_EXIT=%ERRORLEVEL%"
+          if not "%APP_EXIT%"=="0" goto launch_error
+          popd
+          endlocal
+          exit /b 0
+          :launch_error
+          echo DELIMOLD gagal dibuka atau berhenti dengan kode %APP_EXIT%.
+          echo Log jika tersedia: %LOCALAPPDATA%\DELIMOLD\startup.log
+          if exist "%LOCALAPPDATA%\DELIMOLD\startup.log" type "%LOCALAPPDATA%\DELIMOLD\startup.log"
+          pause
+          popd
+          endlocal & exit /b 1
+          :share_error
+          echo Folder share TENDERLOIN tidak bisa diakses.
+          pause
+          endlocal & exit /b 1
           '@ | Set-Content -Encoding ASCII "$root/Buka-DELIMOLD.bat"
           @'
           @echo off
-          start "" /D "%~dp0App" "%~dp0App\DELIMOLD.exe" --client
+          setlocal
+          pushd "%~dp0"
+          if errorlevel 1 goto share_error
+          if not exist "App\DELIMOLD.exe" (
+            echo DELIMOLD.exe tidak ditemukan di folder App.
+            set "APP_EXIT=1"
+            goto launch_error
+          )
+          echo Menghubungkan Engineer ke DELIMOLD TENDERLOIN...
+          start /wait "" "App\DELIMOLD.exe" --client
+          set "APP_EXIT=%ERRORLEVEL%"
+          if not "%APP_EXIT%"=="0" goto launch_error
+          popd
+          endlocal
+          exit /b 0
+          :launch_error
+          echo DELIMOLD gagal dibuka atau berhenti dengan kode %APP_EXIT%.
+          echo Log jika tersedia: %LOCALAPPDATA%\DELIMOLD\startup.log
+          if exist "%LOCALAPPDATA%\DELIMOLD\startup.log" type "%LOCALAPPDATA%\DELIMOLD\startup.log"
+          pause
+          popd
+          endlocal & exit /b 1
+          :share_error
+          echo Folder share TENDERLOIN tidak bisa diakses.
+          pause
+          endlocal & exit /b 1
           '@ | Set-Content -Encoding ASCII "$root/Buka-Engineer.bat"
           @'
           @echo off
-          start "" /D "%~dp0App" "%~dp0App\DELIMOLD.exe" --configure
+          setlocal
+          pushd "%~dp0"
+          if errorlevel 1 goto share_error
+          if not exist "App\DELIMOLD.exe" (
+            echo DELIMOLD.exe tidak ditemukan di folder App.
+            set "APP_EXIT=1"
+            goto launch_error
+          )
+          echo Membuka pengaturan lokasi database dan SALAK...
+          start /wait "" "App\DELIMOLD.exe" --configure
+          set "APP_EXIT=%ERRORLEVEL%"
+          if not "%APP_EXIT%"=="0" goto launch_error
+          popd
+          endlocal
+          exit /b 0
+          :launch_error
+          echo Pengaturan DELIMOLD gagal dibuka atau berhenti dengan kode %APP_EXIT%.
+          echo Log jika tersedia: %LOCALAPPDATA%\DELIMOLD\startup.log
+          if exist "%LOCALAPPDATA%\DELIMOLD\startup.log" type "%LOCALAPPDATA%\DELIMOLD\startup.log"
+          pause
+          popd
+          endlocal & exit /b 1
+          :share_error
+          echo Folder share TENDERLOIN tidak bisa diakses.
+          pause
+          endlocal & exit /b 1
           '@ | Set-Content -Encoding ASCII "$root/Atur-Lokasi-DELIMOLD.bat"
           Copy-Item "BACA-DULU-INDONESIA.txt" "release/BACA-DULU.txt"
           Compress-Archive -Path "release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
