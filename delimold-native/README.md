@@ -28,3 +28,5 @@ Jika database baru masih kosong, seed `seed/catalog.js` checkpoint v12 akan dimu
 ## Jaringan dan platform lama
 
 Engineer membutuhkan koneksi LAN ke nama komputer TENDERLOIN pada port 8766. Aturan firewall/jaringan harus sudah mengizinkan koneksi ini; program tidak mengubah kebijakan Windows atau meminta hak administrator. Python 3.8 x86 dipilih untuk dukungan mesin Windows lama. Paket perlu dibuka dan dijalankan langsung pada Windows 7 kantor sebelum penggunaan operasional karena runtime bundling modern belum diverifikasi pada komputer tersebut.
+
+Launcher menggunakan `pushd` agar path share UNC dapat dibuka. Jika program gagal dijalankan, jendela launcher berhenti dan menampilkan pesan; log startup berada di `%LOCALAPPDATA%\DELIMOLD\startup.log`.
