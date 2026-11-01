@@ -4,6 +4,8 @@ import json
 import os
 import sys
 import tkinter as tk
+import traceback
+from datetime import datetime
 from tkinter import messagebox
 from pathlib import Path
 
@@ -35,6 +37,20 @@ def load_config(base):
         return json.load(stream)
 
 
+def log_startup_error(error):
+    local_app_data = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    folder = Path(local_app_data) / "DELIMOLD"
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        log_path = folder / "startup.log"
+        with log_path.open("a", encoding="utf-8") as stream:
+            stream.write("\n[%s] DELIMOLD gagal dimulai\n" % datetime.now().isoformat())
+            stream.write("".join(traceback.format_exception(type(error), error, error.__traceback__)))
+        return str(log_path)
+    except Exception:
+        return "log startup tidak dapat ditulis"
+
+
 def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--client", action="store_true", help="jalankan client Engineer dari share TENDERLOIN")
@@ -50,7 +66,8 @@ def main():
             if configured:
                 messagebox.showinfo("Pengaturan tersimpan", "Lokasi database dan publikasi sudah disimpan.", parent=root)
         except Exception as exc:
-            messagebox.showerror("Pengaturan DELIMOLD", str(exc), parent=root)
+            log_path = log_startup_error(exc)
+            messagebox.showerror("Pengaturan DELIMOLD", "%s\n\nLog: %s" % (exc, log_path), parent=root)
             root.destroy()
             return 1
         root.destroy()
@@ -101,8 +118,9 @@ def main():
         NativeApp(root, config, store=store, api_client=client, viewer_snapshot=snapshot, api_server=api)
         root.mainloop()
     except Exception as exc:
+        log_path = log_startup_error(exc)
         try:
-            messagebox.showerror("DELIMOLD tidak dapat dimulai", str(exc), parent=root)
+            messagebox.showerror("DELIMOLD tidak dapat dimulai", "%s\n\nLog: %s" % (exc, log_path), parent=root)
         except Exception:
             pass
         if api:
@@ -115,5 +133,14 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        exit_code = main()
+    except Exception as exc:
+        log_path = log_startup_error(exc)
+        try:
+            messagebox.showerror("DELIMOLD gagal dimulai", "%s\n\nLog: %s" % (exc, log_path))
+        except Exception:
+            pass
+        exit_code = 1
+    raise SystemExit(exit_code)
 
