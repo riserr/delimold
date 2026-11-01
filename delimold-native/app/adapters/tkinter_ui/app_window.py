@@ -6,7 +6,7 @@ from tkinter import ttk
 from pathlib import Path
 
 from .app_window_theme import CARD, DARK, FIELD, GREEN, INK, LINE, MUTED, WHITE
-from .shared_components import RoundedPanel, RoundedScrollbar, build_database_status, build_header, build_sidebar
+from .shared_components import RoundedField, RoundedPanel, RoundedScrollbar, build_database_status, build_header, build_sidebar
 from .catalog_screen import CatalogScreenMixin
 from .record_forms import RecordFormsMixin
 from .data_transfer import DataTransferMixin
@@ -182,6 +182,15 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         style.configure("TCombobox", padding=6, fieldbackground=FIELD, background=WHITE, foreground=INK, arrowcolor=INK, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE)
         style.map("TCombobox", fieldbackground=[("readonly", FIELD)], foreground=[("readonly", INK)], selectbackground=[("readonly", FIELD)], selectforeground=[("readonly", INK)])
         style.configure("TEntry", padding=7, fieldbackground=FIELD, foreground=INK, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE)
+        style.configure("Rounded.TCombobox", padding=2, fieldbackground=FIELD, background=FIELD,
+                        foreground=INK, arrowcolor=INK, bordercolor=FIELD, lightcolor=FIELD,
+                        darkcolor=FIELD, borderwidth=0, relief="flat")
+        style.map("Rounded.TCombobox", fieldbackground=[("readonly", FIELD)],
+                  foreground=[("readonly", INK)], selectbackground=[("readonly", FIELD)],
+                  selectforeground=[("readonly", INK)])
+        style.configure("Rounded.TEntry", padding=2, fieldbackground=FIELD, foreground=INK,
+                        bordercolor=FIELD, lightcolor=FIELD, darkcolor=FIELD,
+                        borderwidth=0, relief="flat")
         style.configure("TFrame", background=WHITE)
         style.configure("TLabel", background=WHITE, foreground=INK)
         style.configure("TButton", background=WHITE, foreground=INK, bordercolor=LINE, padding=(9, 5))
@@ -241,9 +250,10 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.filters.pack(fill="x", padx=10, pady=9)
         search_row = tk.Frame(self.filters, bg=WHITE)
         search_row.pack(fill="x", pady=(0, 7))
-        ttk.Entry(search_row, textvariable=self.search_var).pack(side="left", fill="x", expand=True, padx=(0, 7))
+        RoundedField(search_row, ttk.Entry, textvariable=self.search_var,
+                     style="Rounded.TEntry").pack(side="left", fill="x", expand=True, padx=(0, 7))
         self.search_var.trace_add("write", lambda *_: self._schedule_filter_refresh())
-        ttk.Button(search_row, text="Reset filter", command=self.reset_filters).pack(side="right")
+        RoundedToolbarButton(search_row, "Reset filter", self.reset_filters).pack(side="right")
         self.filter_fields_frame = tk.Frame(self.filters, bg=WHITE)
         self.filter_fields_frame.pack(fill="x")
         self._build_filters()
