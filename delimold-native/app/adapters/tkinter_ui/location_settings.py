@@ -4,7 +4,7 @@ from pathlib import Path
 from tkinter import filedialog
 from uuid import uuid4
 
-from .shared_components import build_database_status
+from .shared_components import RoundedPanel, build_database_status
 from .error_presenter import present_error
 
 
@@ -129,15 +129,15 @@ def configure_master_paths(root, base, config, force=False):
     tk.Label(content, text="Atur database utama dan folder publikasi bersama.", bg=DARK, fg=MUTED,
              font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 17))
 
-    card = tk.Frame(content, bg=CARD, highlightbackground=LINE, highlightthickness=1, padx=18, pady=17)
+    card = RoundedPanel(content, fill=CARD, border=LINE, radius=8, padx=18, pady=17)
     card.pack(fill="both", expand=True)
-    tk.Label(card, text="Database TENDERLOIN", bg=CARD, fg=TEXT,
+    tk.Label(card.content, text="Database TENDERLOIN", bg=CARD, fg=TEXT,
              font=("Segoe UI", 12, "bold")).pack(anchor="w")
     tk.Label(card, text="Database aktif tetap di komputer TENDERLOIN, tidak disimpan di share Engineer atau SALAK.",
              bg=CARD, fg=MUTED, justify="left", wraplength=650,
              font=("Segoe UI", 9)).pack(anchor="w", pady=(9, 16))
 
-    database_row = tk.Frame(card, bg=CARD)
+    database_row = tk.Frame(card.content, bg=CARD)
     database_row.pack(fill="x")
     tk.Label(database_row, text="File database", width=20, anchor="w", bg=CARD, fg=TEXT,
              font=("Segoe UI", 9, "bold")).pack(side="left")
@@ -251,7 +251,7 @@ def build_location_settings(parent, base, config, on_saved, on_back):
              font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 15))
     build_database_status(page, "master")
 
-    card = tk.Frame(page, bg=CARD, highlightbackground=LINE, highlightthickness=1, padx=18, pady=16)
+    card = RoundedPanel(page, fill=CARD, border=LINE, radius=8, padx=18, pady=16)
     card.pack(fill="both", expand=True)
     tk.Label(card, text="Database TENDERLOIN", bg=CARD, fg=TEXT,
              font=("Segoe UI", 12, "bold")).pack(anchor="w")
