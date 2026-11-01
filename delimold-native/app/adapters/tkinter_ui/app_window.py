@@ -264,14 +264,23 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         self.page_label.pack(side="right", padx=6)
         self.previous_page_button = ttk.Button(actions_bottom, text="‹ Sebelumnya", command=self.previous_page)
         self.previous_page_button.pack(side="right", padx=(0, 6))
-        self.root.after(120000, self.auto_refresh)
+        self._auto_refresh_id = self.root.after(120000, self.auto_refresh)
 
     def configure_locations(self):
-        dialog = tk.Toplevel(self.root)
-        dialog.withdraw()
+        # Render the settings page in the existing application window.
+        # Stop the old page's timer while its widgets are temporarily removed.
+        main_geometry = self.root.geometry()
+        if getattr(self, "_auto_refresh_id", None):
+            try:
+                self.root.after_cancel(self._auto_refresh_id)
+            except tk.TclError:
+                pass
+            self._auto_refresh_id = None
+        for child in self.root.winfo_children():
+            child.destroy()
         updated = None
         try:
-            updated = configure_master_paths(dialog, self.base_dir, dict(self.config), force=True)
+            updated = configure_master_paths(self.root, self.base_dir, dict(self.config), force=True)
             if updated:
                 self.config.update(updated)
                 publish_path = Path(updated["publish_path"])
@@ -283,11 +292,12 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         except Exception as exc:
             messagebox.showerror("Pengaturan lokasi", str(exc), parent=self.root)
         finally:
-            try:
-                if dialog.winfo_exists():
-                    dialog.destroy()
-            except tk.TclError:
-                pass
+            if self.root.winfo_exists():
+                self.root.minsize(980, 620)
+                self.root.geometry(main_geometry)
+                self.root.protocol("WM_DELETE_WINDOW", self.close)
+                self._build()
+                self.refresh()
 
     def _action_button(self, text, command, primary=False):
         if self.mode == "viewer" or (self.account and self.account.role == "VIEWER"):
@@ -445,7 +455,7 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         if self.root.winfo_exists():
             if self.mode == "viewer":
                 self.refresh()
-            self.root.after(120000, self.auto_refresh)
+            self._auto_refresh_id = self.root.after(120000, self.auto_refresh)
 
     def close(self):
         try:

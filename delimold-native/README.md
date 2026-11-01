@@ -25,6 +25,7 @@ Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKAS
 Saat pertama dibuka, wizard native meminta file database lokal TENDERLOIN dan folder App bersama di SALAK. Database awal diarahkan ke `%LOCALAPPDATA%\DELIMOLD\delimold.sqlite3`. Snapshot baca-saja diterbitkan ke subfolder `published-python` yang dibuat di lokasi SALAK pilihan.
 
 Setelah login Supervisor, pilih `Atur lokasi data` di sidebar untuk membuka layar pengaturan yang sama lagi.
+Pengaturan dari dalam aplikasi ditampilkan di jendela utama yang sama. Simpan atau tutup layar pengaturan untuk kembali ke aplikasi.
 
 Jika aplikasi gagal mulai, rincian startup dicatat ke `%LOCALAPPDATA%\DELIMOLD\startup.log`.
 
