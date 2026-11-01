@@ -73,10 +73,13 @@ def select_published_salak_folder(root, config, base):
     return True
 
 
-def main():
+def main(force_viewer=False):
     base = application_directory()
     try:
         config = load_config(base)
+        if force_viewer:
+            config["mode"] = "viewer"
+            config["snapshot_path"] = "published/catalog.json"
         if config["mode"] not in ("master", "viewer"):
             raise ValueError("Mode yang didukung adalah master atau viewer.")
         root = tk.Tk()
