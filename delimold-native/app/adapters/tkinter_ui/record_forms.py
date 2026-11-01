@@ -7,7 +7,7 @@ from tkinter import ttk
 from app.application.dto import RecordSaveRequest, UserSaveRequest
 from app.domain.validation import validate_status_transition
 from .error_presenter import present_error
-from .app_window_theme import INK, WHITE
+from .app_window_theme import CARD, INK, LINE, MUTED, PALE, WHITE
 from .catalog_config import FIELDS, TABS
 
 
@@ -15,12 +15,31 @@ class RecordFormsMixin:
     def _record_form(self, key, record):
         if not self._can_write():
             return
-        dlg = tk.Toplevel(self.root); dlg.title(("Edit " if key else "Tambah ") + TABS[self.collection]); dlg.transient(self.root); dlg.grab_set()
+        title = ("Edit " if key else "Tambah ") + TABS[self.collection]
+        dlg = tk.Toplevel(self.root); dlg.title(title); dlg.transient(self.root); dlg.grab_set()
+        dlg.overrideredirect(True); dlg.configure(bg=WHITE)
         dlg.geometry("600x700")
         dlg.minsize(540, 520)
-        outer = ttk.Frame(dlg, padding=18); outer.pack(fill="both", expand=True)
-        ttk.Label(outer, text=("Edit " if key else "Tambah ") + TABS[self.collection], font=("Segoe UI", 15, "bold"), foreground=INK).pack(anchor="w")
-        form_host = ttk.Frame(outer); form_host.pack(fill="both", expand=True, pady=12)
+        shell = tk.Frame(dlg, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
+        shell.pack(fill="both", expand=True)
+        titlebar = tk.Frame(shell, bg=CARD, height=40)
+        titlebar.pack(fill="x"); titlebar.pack_propagate(False)
+        tk.Label(titlebar, text=title, bg=CARD, fg=INK, font=("Segoe UI", 10), anchor="w").pack(side="left", fill="both", expand=True, padx=13)
+        tk.Button(titlebar, text="×", command=dlg.destroy, bg=CARD, fg=MUTED,
+                  activebackground=PALE, activeforeground=INK, bd=0, relief="flat",
+                  highlightthickness=0, font=("Segoe UI", 16), width=3, cursor="hand2").pack(side="right", fill="y")
+        drag = {"x": 0, "y": 0}
+        def start_drag(event):
+            drag["x"], drag["y"] = event.x_root - dlg.winfo_x(), event.y_root - dlg.winfo_y()
+        def move_dialog(event):
+            dlg.geometry("+%d+%d" % (event.x_root - drag["x"], event.y_root - drag["y"]))
+        titlebar.bind("<ButtonPress-1>", start_drag)
+        titlebar.bind("<B1-Motion>", move_dialog)
+        for child in titlebar.winfo_children():
+            child.bind("<ButtonPress-1>", start_drag)
+            child.bind("<B1-Motion>", move_dialog)
+        outer = tk.Frame(shell, bg=WHITE, padx=18, pady=12); outer.pack(fill="both", expand=True)
+        form_host = ttk.Frame(outer); form_host.pack(fill="both", expand=True, pady=(0, 8))
         canvas = tk.Canvas(form_host, highlightthickness=0, bd=0, bg=WHITE)
         scrollbar = ttk.Scrollbar(form_host, orient="vertical", command=canvas.yview)
         form = ttk.Frame(canvas)
@@ -219,4 +238,9 @@ class RecordFormsMixin:
                 dlg.destroy(); self.refresh()
             except Exception as exc: error.set(present_error(exc))
         ttk.Button(actions, text="Simpan", command=save).pack(side="left", padx=5)
+        dlg.update_idletasks()
+        x = self.root.winfo_rootx() + max(0, (self.root.winfo_width() - dlg.winfo_width()) // 2)
+        y = self.root.winfo_rooty() + max(0, (self.root.winfo_height() - dlg.winfo_height()) // 2)
+        dlg.geometry("+%d+%d" % (x, y))
+        dlg.bind("<Escape>", lambda _event: dlg.destroy())
         dlg.wait_window()
