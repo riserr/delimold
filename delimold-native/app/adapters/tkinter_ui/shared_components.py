@@ -11,6 +11,67 @@ TAB_LABELS = {
 }
 
 
+class SidebarNavItem(tk.Canvas):
+    """Rounded, preview-matched navigation row with a clear active marker."""
+
+    def __init__(self, parent, label, command, selected=False):
+        super().__init__(parent, width=180, height=40, bg=WHITE, bd=0,
+                         highlightthickness=0, relief="flat")
+        self.label = label
+        self.command = command
+        self.selected = selected
+        self.hovered = False
+        self.bind("<Button-1>", lambda _event: self.command())
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        self.bind("<Configure>", lambda _event: self._draw())
+        self._draw()
+
+    def configure(self, cnf=None, **kwargs):
+        bg = kwargs.pop("bg", kwargs.pop("background", None))
+        kwargs.pop("fg", kwargs.pop("foreground", None))
+        if bg is not None:
+            self.selected = bg == PALE
+            self._draw()
+        if kwargs:
+            super().configure(cnf, **kwargs)
+
+    config = configure
+
+    def _on_enter(self, _event):
+        self.hovered = True
+        self._draw()
+
+    def _on_leave(self, _event):
+        self.hovered = False
+        self._draw()
+
+    def _draw(self):
+        self.delete("all")
+        width = max(self.winfo_width(), 180)
+        height = max(self.winfo_height(), 40)
+        if self.selected:
+            fill = PALE
+        elif self.hovered:
+            fill = "#26352b"
+        else:
+            fill = WHITE
+        radius = 7
+        points = [
+            radius, 2, width-radius, 2, width-2, radius+2, width-2, height-radius-2,
+            width-radius, height-2, radius, height-2, 2, height-radius-2, 2, radius+2,
+        ]
+        self.create_polygon(points, smooth=True, splinesteps=16, fill=fill, outline=fill)
+        icon_color = GREEN if not self.selected else GREEN
+        text_color = INK if self.selected else MUTED
+        if self.selected:
+            self.create_line(3, 10, 3, height-10, fill=GREEN, width=3, capstyle="round")
+        self.create_text(17, height/2, text="▤", anchor="w", fill=icon_color,
+                         font=("Segoe UI", 9))
+        self.create_text(34, height/2, text=self.label, anchor="w", fill=text_color,
+                         font=("Segoe UI", 9))
+
+
 def build_sidebar(parent, role, mode, selected, on_select, on_settings=None):
     sidebar = tk.Frame(parent, bg=WHITE, width=205, highlightbackground=LINE, highlightthickness=1)
     sidebar.pack(side="left", fill="y")
@@ -29,16 +90,13 @@ def build_sidebar(parent, role, mode, selected, on_select, on_settings=None):
         visible_tabs = ["molds", "containers", "patterns", "stickers"]
     buttons = {}
     for key in visible_tabs:
-        button = tk.Button(sidebar, text="▤   " + TAB_LABELS[key], anchor="w", relief="flat", bd=0,
-                           bg=PALE if key == selected else WHITE, fg=INK if key == selected else MUTED,
-                           activebackground=PALE, padx=13, pady=10, font=("Segoe UI", 9),
-                           command=lambda item=key: on_select(item))
+        button = SidebarNavItem(
+            sidebar, TAB_LABELS[key], lambda item=key: on_select(item), selected=(key == selected))
         button.pack(fill="x", padx=8, pady=2)
         buttons[key] = button
     if mode == "master" and role == "SUPERVISOR" and on_settings:
-        button = tk.Button(sidebar, text="⚙   Atur lokasi data", anchor="w", relief="flat", bd=0,
-                           bg=WHITE, fg=MUTED, activebackground=PALE, padx=13, pady=10,
-                           font=("Segoe UI", 9), command=on_settings)
+        button = SidebarNavItem(sidebar, "Atur lokasi data", on_settings,
+                                selected=(selected == "settings"))
         button.pack(fill="x", padx=8, pady=2)
         buttons["settings"] = button
     tk.Frame(sidebar, bg=WHITE).pack(fill="both", expand=True)
