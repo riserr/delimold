@@ -6,9 +6,11 @@ import tkinter as tk
 import tkinter.font as tkfont
 import time
 from tkinter import filedialog, messagebox, simpledialog, ttk
+from pathlib import Path
 from uuid import uuid4
 
 from .auth import create_user, verify_user
+from .paths import configure_master_paths
 
 
 GREEN = "#28684b"
@@ -112,13 +114,14 @@ FILTER_FIELDS = {
 
 
 class NativeApp:
-    def __init__(self, root, config, store=None, api_client=None, viewer_snapshot=None, api_server=None):
+    def __init__(self, root, config, store=None, api_client=None, viewer_snapshot=None, api_server=None, base_dir=None):
         self.root = root
         self.config = config
         self.store = store
         self.client = api_client
         self.viewer_snapshot = viewer_snapshot
         self.api_server = api_server
+        self.base_dir = Path(base_dir or Path.cwd())
         self.mode = config.get("mode", "master")
         self.account = None
         self.collection = "molds"
@@ -292,6 +295,12 @@ class NativeApp:
                                command=lambda item=key: self.select_collection(item))
             button.pack(fill="x", padx=8, pady=2)
             self.nav_buttons[key] = button
+        if self.mode == "master" and role == "SUPERVISOR":
+            settings_button = tk.Button(self.sidebar, text="⚙   Atur lokasi data", anchor="w", relief="flat", bd=0,
+                                         bg=WHITE, fg=MUTED, activebackground=PALE,
+                                         padx=13, pady=10, font=("Segoe UI", 9),
+                                         command=self.configure_locations)
+            settings_button.pack(fill="x", padx=8, pady=2)
         tk.Frame(self.sidebar, bg=WHITE).pack(fill="both", expand=True)
         tk.Label(self.sidebar, text="Satu sumber data.\nHak akses mengikuti peran.", bg="#f6f8f4", fg=MUTED,
                  justify="left", font=("Segoe UI", 8), padx=10, pady=10).pack(fill="x", padx=11, pady=9)
@@ -364,6 +373,31 @@ class NativeApp:
                                      values=("25", "50", "100", "Semua"))
         self.page_box.pack(side="right"); self.page_box.bind("<<ComboboxSelected>>", lambda _e: self.refresh_table())
         self.root.after(120000, self.auto_refresh)
+
+    def configure_locations(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.withdraw()
+        updated = None
+        try:
+            updated = configure_master_paths(dialog, self.base_dir, dict(self.config), force=True)
+            if updated:
+                self.config.update(updated)
+                publish_path = Path(updated["publish_path"])
+                if self.api_server:
+                    self.api_server.publish_path = publish_path
+                if self.store:
+                    self.store.publish(publish_path)
+                messagebox.showinfo("Lokasi tersimpan",
+                                    "Lokasi publikasi SALAK sudah aktif. Perubahan lokasi database berlaku setelah DELIMOLD dibuka kembali.",
+                                    parent=self.root)
+        except Exception as exc:
+            messagebox.showerror("Pengaturan lokasi", str(exc), parent=self.root)
+        finally:
+            try:
+                if dialog.winfo_exists():
+                    dialog.destroy()
+            except tk.TclError:
+                pass
 
     def _action_button(self, text, command, primary=False):
         if self.mode == "viewer" or (self.account and self.account.get("role") == "VIEWER"):
