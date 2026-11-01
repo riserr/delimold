@@ -8,6 +8,7 @@ from app.application.dto import RecordSaveRequest, UserSaveRequest
 from app.domain.validation import validate_status_transition
 from .error_presenter import present_error
 from .app_window_theme import CARD, INK, LINE, MUTED, PALE, WHITE
+from .shared_components import RoundedScrollbar
 from .catalog_config import FIELDS, TABS
 
 
@@ -41,7 +42,7 @@ class RecordFormsMixin:
         outer = tk.Frame(shell, bg=WHITE, padx=18, pady=12); outer.pack(fill="both", expand=True)
         form_host = ttk.Frame(outer); form_host.pack(fill="both", expand=True, pady=(0, 8))
         canvas = tk.Canvas(form_host, highlightthickness=0, bd=0, bg=WHITE)
-        scrollbar = ttk.Scrollbar(form_host, orient="vertical", command=canvas.yview)
+        scrollbar = RoundedScrollbar(form_host, canvas.yview)
         form = ttk.Frame(canvas)
         form_window = canvas.create_window((0, 0), window=form, anchor="nw")
         form.bind("<Configure>", lambda _event: canvas.configure(scrollregion=canvas.bbox("all")))
