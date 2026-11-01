@@ -75,13 +75,17 @@ class SidebarNavItem(tk.Canvas):
 class RoundedScrollbar(tk.Canvas):
     """Compact canvas scrollbar with rounded track and thumb."""
 
-    def __init__(self, parent, command, width=14):
+    def __init__(self, parent, command, orient="vertical", width=14):
         self.command = command
+        self.orient = orient
         self.thumb = (0.0, 1.0)
         self.hovered = False
         self.drag_offset = None
-        super().__init__(parent, width=width, bd=0, highlightthickness=0,
-                         relief="flat", bg=parent.cget("bg"), cursor="hand2")
+        canvas_width = width if orient == "vertical" else 120
+        canvas_height = 120 if orient == "vertical" else width
+        super().__init__(parent, width=canvas_width, height=canvas_height, bd=0,
+                         highlightthickness=0, relief="flat", bg=parent.cget("bg"),
+                         cursor="hand2")
         self.bind("<Configure>", lambda _event: self._draw())
         self.bind("<Enter>", self._on_enter)
         self.bind("<Leave>", self._on_leave)
@@ -102,53 +106,67 @@ class RoundedScrollbar(tk.Canvas):
         self.hovered = False
         self._draw()
 
+    def _length(self):
+        return max(self.winfo_height() if self.orient == "vertical" else self.winfo_width(), 20)
+
     def _bounds(self):
-        height = max(self.winfo_height(), 20)
-        top = max(2, int(self.thumb[0] * height))
-        bottom = min(height - 2, int(self.thumb[1] * height))
-        if bottom - top < 24:
-            bottom = min(height - 2, top + 24)
-            top = max(2, bottom - 24)
-        return top, bottom
+        length = self._length()
+        start = max(2, int(self.thumb[0] * length))
+        end = min(length - 2, int(self.thumb[1] * length))
+        if end - start < 24:
+            end = min(length - 2, start + 24)
+            start = max(2, end - 24)
+        return start, end
 
     def _draw(self):
         self.delete("all")
         width = max(self.winfo_width(), 14)
-        height = max(self.winfo_height(), 20)
-        center = width // 2
-        self._pill(center, 2, height - 2, "#27352c")
-        top, bottom = self._bounds()
+        height = max(self.winfo_height(), 14)
+        length = height if self.orient == "vertical" else width
         color = GREEN if self.hovered else "#718477"
-        self._pill(center, top, bottom, color)
+        if self.orient == "vertical":
+            center = width // 2
+            self._pill_vertical(center, 2, height - 2, "#27352c", width)
+            start, end = self._bounds()
+            self._pill_vertical(center, start, end, color, width)
+        else:
+            center = height // 2
+            self._pill_horizontal(2, center, length - 2, "#27352c", height)
+            start, end = self._bounds()
+            self._pill_horizontal(start, center, end, color, height)
 
-    def _pill(self, center, top, bottom, color):
-        radius = max(2, (self.winfo_width() - 6) // 2)
+    def _pill_vertical(self, center, top, bottom, color, width):
+        radius = max(2, (width - 6) // 2)
         x1, x2 = center - radius, center + radius
-        self.create_rectangle(x1, top + radius, x2, bottom - radius,
-                              fill=color, outline=color)
-        self.create_oval(x1, top, x2, top + 2 * radius,
-                         fill=color, outline=color)
-        self.create_oval(x1, bottom - 2 * radius, x2, bottom,
-                         fill=color, outline=color)
+        self.create_rectangle(x1, top + radius, x2, bottom - radius, fill=color, outline=color)
+        self.create_oval(x1, top, x2, top + 2 * radius, fill=color, outline=color)
+        self.create_oval(x1, bottom - 2 * radius, x2, bottom, fill=color, outline=color)
+
+    def _pill_horizontal(self, left, center, right, color, height):
+        radius = max(2, (height - 6) // 2)
+        y1, y2 = center - radius, center + radius
+        self.create_rectangle(left + radius, y1, right - radius, y2, fill=color, outline=color)
+        self.create_oval(left, y1, left + 2 * radius, y2, fill=color, outline=color)
+        self.create_oval(right - 2 * radius, y1, right, y2, fill=color, outline=color)
 
     def _press(self, event):
-        top, bottom = self._bounds()
-        height = max(self.winfo_height(), 1)
-        if top <= event.y <= bottom:
-            self.drag_offset = (event.y - top) / height
+        position = event.y if self.orient == "vertical" else event.x
+        start, end = self._bounds()
+        length = max(self._length(), 1)
+        if start <= position <= end:
+            self.drag_offset = (position - start) / length
             return
-        self.command("scroll", -1 if event.y < top else 1, "pages")
+        self.command("scroll", -1 if position < start else 1, "pages")
 
     def _drag(self, event):
         if self.drag_offset is None:
             return
-        height = max(self.winfo_height(), 1)
-        fraction = max(0.0, min(1.0, event.y / height - self.drag_offset))
+        position = event.y if self.orient == "vertical" else event.x
+        fraction = max(0.0, min(1.0, position / max(self._length(), 1) - self.drag_offset))
         self.command("moveto", str(fraction))
 
     def _release(self, _event):
         self.drag_offset = None
-
 
 def build_sidebar(parent, role, mode, selected, on_select, on_settings=None):
     sidebar = tk.Frame(parent, bg=WHITE, width=205, highlightbackground=LINE, highlightthickness=1)
