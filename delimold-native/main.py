@@ -142,7 +142,7 @@ def main():
             raise ValueError("Mode config harus master, client, atau viewer")
         log_startup_event("Mode %s siap; membuka antarmuka DELIMOLD" % mode)
         root.deiconify()
-        NativeApp(root, config, store=store, api_client=client, viewer_snapshot=snapshot, api_server=api)
+        NativeApp(root, config, store=store, api_client=client, viewer_snapshot=snapshot, api_server=api, base_dir=base)
         root.mainloop()
     except Exception as exc:
         log_path = log_startup_error(exc)
