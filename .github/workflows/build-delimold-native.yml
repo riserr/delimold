@@ -22,26 +22,32 @@ jobs:
       - name: Build the native desktop executable
         working-directory: delimold-native
         run: python -m PyInstaller --noconfirm --clean --onedir --windowed --name DELIMOLD main.py
-      - name: Assemble no-install role folders
+      - name: Assemble one shared TENDERLOIN package
         shell: pwsh
         working-directory: delimold-native
         run: |
-          $root = "release"
-          foreach ($role in @("TENDERLOIN", "ENGINEER", "SALAK")) {
-            New-Item -ItemType Directory -Force -Path "$root/$role/App" | Out-Null
-            Copy-Item -Recurse -Force "dist/DELIMOLD/*" "$root/$role/App/"
-          }
-          Copy-Item "config.master.example.json" "$root/TENDERLOIN/App/config.json"
-          Copy-Item "config.client.example.json" "$root/ENGINEER/App/config.json"
-          Copy-Item "config.viewer.example.json" "$root/SALAK/App/config.json"
+          $root = "release/TENDERLOIN"
+          New-Item -ItemType Directory -Force -Path "$root/App" | Out-Null
+          Copy-Item -Recurse -Force "dist/DELIMOLD/*" "$root/App/"
+          Copy-Item "config.master.example.json" "$root/App/config.json"
           if (Test-Path "seed/catalog.js") {
-            New-Item -ItemType Directory -Force -Path "$root/TENDERLOIN/App/seed" | Out-Null
-            Copy-Item "seed/catalog.js" "$root/TENDERLOIN/App/seed/catalog.js"
+            New-Item -ItemType Directory -Force -Path "$root/App/seed" | Out-Null
+            Copy-Item "seed/catalog.js" "$root/App/seed/catalog.js"
           }
-          New-Item -ItemType Directory -Force -Path "$root/TENDERLOIN/App/Database" | Out-Null
-          New-Item -ItemType Directory -Force -Path "$root/SALAK/App/published-python" | Out-Null
-          Copy-Item "BACA-DULU-INDONESIA.txt" "$root/BACA-DULU.txt"
-          Compress-Archive -Path "$root/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
+          @'
+          @echo off
+          start "" /D "%~dp0App" "%~dp0App\DELIMOLD.exe"
+          '@ | Set-Content -Encoding ASCII "$root/Buka-DELIMOLD.bat"
+          @'
+          @echo off
+          start "" /D "%~dp0App" "%~dp0App\DELIMOLD.exe" --client
+          '@ | Set-Content -Encoding ASCII "$root/Buka-Engineer.bat"
+          @'
+          @echo off
+          start "" /D "%~dp0App" "%~dp0App\DELIMOLD.exe" --configure
+          '@ | Set-Content -Encoding ASCII "$root/Atur-Lokasi-DELIMOLD.bat"
+          Copy-Item "BACA-DULU-INDONESIA.txt" "release/BACA-DULU.txt"
+          Compress-Archive -Path "release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
       - uses: actions/upload-artifact@v4
         with:
           name: DELIMOLD-Native-Python-Windows-x86
