@@ -1,31 +1,18 @@
-DELIMOLD Native Python — Paket bersama TENDERLOIN (Windows x86)
+DELIMOLD Native Python — TENDERLOIN
 
-Tidak perlu memasang Python, browser, atau aplikasi tambahan. Program desktop native berjalan dari DELIMOLD.exe.
+Tidak perlu memasang Python, browser, atau aplikasi tambahan.
 
-ISI PAKET
-- Folder TENDERLOIN berisi satu aplikasi DELIMOLD dan tiga shortcut .bat.
-- Para Engineer membuka Buka-Engineer.bat dari folder bersama TENDERLOIN. Tidak ada paket aplikasi terpisah untuk disalin ke komputer Engineer.
-- DELIMOLD menerbitkan snapshot baca-saja ke folder published-python di SALAK.
-- Database SQLite utama berada di profil lokal TENDERLOIN, bukan di SALAK atau folder aplikasi bersama.
+CARA MENJALANKAN
+1. Ekstrak folder TENDERLOIN ke komputer TENDERLOIN.
+2. Klik ganda TENDERLOIN\DELIMOLD.exe.
+3. Saat pertama dibuka, pilih lokasi database lokal dan folder publikasi di SALAK.
+4. Program membuat subfolder published-python di folder SALAK yang dipilih.
+5. Jika database masih kosong, katalog checkpoint v12 dimuat otomatis dan program meminta pembuatan akun Supervisor pertama.
 
-CARA MENYIAPKAN
-1. Simpan salinan cadangan aplikasi dan data yang sedang dipakai terlebih dahulu.
-2. Ekstrak folder TENDERLOIN ke lokasi bersama yang bisa diakses para Engineer.
-3. Di komputer TENDERLOIN, jalankan Buka-DELIMOLD.bat. Saat pertama kali, jendela pengaturan meminta lokasi database lokal dan folder publikasi di SALAK.
-4. Pada pilihan folder SALAK, pilih folder App bersama. Program membuat dan memakai subfolder published-python di sana.
-5. Setelah lokasi disimpan, database baru akan dimuat dari seed checkpoint v12 dan aplikasi meminta pembuatan akun Supervisor pertama.
-6. Di komputer Engineer, buka Buka-Engineer.bat dari share TENDERLOIN. Jika nama komputer server bukan TENDERLOIN, ubah server_host di App\config.json.
-7. Untuk mengubah path database atau publikasi, jalankan Atur-Lokasi-DELIMOLD.bat dari TENDERLOIN.
+Jangan hapus atau timpa database kantor yang sudah berisi data. Database lokal disimpan di %LOCALAPPDATA%\DELIMOLD\delimold.sqlite3.
 
-KENAPA ADA PORT LAN
-- Program Engineer dijalankan dari file yang sama di share, tetapi prosesnya tetap berjalan pada komputer Engineer. Agar dapat membaca/menyimpan data satu database pusat di TENDERLOIN, aplikasi berkomunikasi melalui LAN ke layanan API TENDERLOIN pada port 8766.
-- Tidak ada browser atau server web. Port ini hanya untuk komunikasi aplikasi DELIMOLD. Kebijakan jaringan Windows harus sudah mengizinkan koneksi tersebut; paket tidak mengubah firewall dan tidak memerlukan hak administrator.
-- Jika komputer Engineer membuka langsung file SQLite di share, file bisa terkunci atau rusak saat dipakai bersama. Karena itu semua perubahan melewati layanan TENDERLOIN.
-- Folder SALAK hanya menyimpan snapshot yang dipublikasikan. TENDERLOIN perlu memiliki hak tulis pada folder tersebut.
+Jika aplikasi gagal mulai, periksa %LOCALAPPDATA%\DELIMOLD\startup.log.
 
-DATA DAN KOMPATIBILITAS
-- Seed checkpoint v12 berisi 869 cetakan, 108 container, dan 89 pattern.
-- Seed tidak berisi akun lama, project aktif, atau data pembelian live. Database aplikasi lama tidak otomatis dikonversi. Jangan mengganti data operasional sebelum database live diperiksa dan dipindahkan.
-- Pembelian hanya untuk Supervisor dan tidak diterbitkan ke SALAK.
-- Paket dibangun dengan Python 3.8 32-bit agar mendukung Windows x86/x64 lama. Perlu pemeriksaan buka/jalankan pada komputer Windows 7 kantor sebelum digunakan operasional.
-- Launcher menangani folder share TENDERLOIN dan menahan jendela jika aplikasi gagal dimulai. Log startup ada di %LOCALAPPDATA%\DELIMOLD\startup.log.
+Paket ini berfokus pada pembukaan aplikasi utama di TENDERLOIN. Tidak ada file BAT di dalam paket. Mode Engineer akan disiapkan setelah aplikasi utama berhasil dibuka.
+
+Seed checkpoint berisi 869 cetakan, 108 container, dan 89 pattern; seed tidak berisi akun lama, project aktif, atau pembelian live.
