@@ -6,6 +6,7 @@ from tkinter import messagebox, ttk
 from app.application.dto import CatalogPageQuery, FilterOptionsQuery, SnapshotReadRequest
 from .error_presenter import present_error
 from .app_window_theme import CARD, GREEN, LINE, MUTED, WHITE
+from .shared_components import RoundedPanel
 from .catalog_config import FILTER_FIELDS
 
 
@@ -54,11 +55,11 @@ class CatalogScreenMixin:
     def _make_stats(self):
         self.stat_values = []
         for i in range(4):
-            frame = tk.Frame(self.stats_frame, bg=CARD, highlightbackground=LINE, highlightthickness=1, padx=12, pady=8)
+            frame = RoundedPanel(self.stats_frame, fill=CARD, border=LINE, radius=7, padx=12, pady=8)
             frame.pack(side="left", fill="x", expand=True, padx=(0 if i == 0 else 8, 0))
-            label = tk.Label(frame, text=("Total", "Kode unik", "Aktif", "Nonaktif")[i], bg=CARD, fg=MUTED, font=("Segoe UI", 8))
+            label = tk.Label(frame.content, text=("Total", "Kode unik", "Aktif", "Nonaktif")[i], bg=CARD, fg=MUTED, font=("Segoe UI", 9))
             label.pack(anchor="w")
-            value = tk.Label(frame, text="—", bg=CARD, fg=GREEN, font=("Segoe UI", 18))
+            value = tk.Label(frame.content, text="—", bg=CARD, fg=GREEN, font=("Segoe UI", 21))
             value.pack(anchor="w", pady=(3, 0))
             self.stat_values.append((label, value))
 
