@@ -7,7 +7,8 @@ from tkinter import ttk
 from app.application.dto import RecordSaveRequest, UserSaveRequest
 from app.domain.validation import validate_status_transition
 from .error_presenter import present_error
-from .app_window_theme import CARD, INK, LINE, MUTED, PALE, WHITE
+from .app_window_theme import CARD, DARK, INK, LINE, MUTED, PALE, WHITE
+from .shared_components import RoundedPanel, RoundedScrollbar
 from .shared_components import RoundedScrollbar
 from .catalog_config import FIELDS, TABS
 
@@ -18,12 +19,12 @@ class RecordFormsMixin:
             return
         title = ("Edit " if key else "Tambah ") + TABS[self.collection]
         dlg = tk.Toplevel(self.root); dlg.title(title); dlg.transient(self.root); dlg.grab_set()
-        dlg.overrideredirect(True); dlg.configure(bg=WHITE)
+        dlg.overrideredirect(True); dlg.configure(bg=DARK)
         dlg.geometry("600x700")
         dlg.minsize(540, 520)
-        shell = tk.Frame(dlg, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
+        shell = RoundedPanel(dlg, fill=WHITE, border=LINE, radius=10)
         shell.pack(fill="both", expand=True)
-        titlebar = tk.Frame(shell, bg=CARD, height=40)
+        titlebar = tk.Frame(shell.content, bg=CARD, height=40)
         titlebar.pack(fill="x"); titlebar.pack_propagate(False)
         tk.Label(titlebar, text=title, bg=CARD, fg=INK, font=("Segoe UI", 10), anchor="w").pack(side="left", fill="both", expand=True, padx=13)
         tk.Button(titlebar, text="×", command=dlg.destroy, bg=CARD, fg=MUTED,
@@ -39,7 +40,7 @@ class RecordFormsMixin:
         for child in titlebar.winfo_children():
             child.bind("<ButtonPress-1>", start_drag)
             child.bind("<B1-Motion>", move_dialog)
-        outer = tk.Frame(shell, bg=WHITE, padx=18, pady=12); outer.pack(fill="both", expand=True)
+        outer = tk.Frame(shell.content, bg=WHITE, padx=18, pady=12); outer.pack(fill="both", expand=True)
         form_host = ttk.Frame(outer); form_host.pack(fill="both", expand=True, pady=(0, 8))
         canvas = tk.Canvas(form_host, highlightthickness=0, bd=0, bg=WHITE)
         scrollbar = RoundedScrollbar(form_host, canvas.yview)
