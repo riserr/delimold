@@ -4,7 +4,7 @@ import tkinter as tk
 import traceback
 from datetime import datetime
 from pathlib import Path
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 
 from app.adapters.salak_publisher import JsonSnapshotPublisher, JsonSnapshotReader
 from app.adapters.seed_catalog_reader import JsonSeedCatalogReader
@@ -43,6 +43,36 @@ def log_error(error):
         return "log startup tidak dapat ditulis"
 
 
+def select_published_salak_folder(root, config, base):
+    """Ask once for an existing SALAK published folder and remember it."""
+    if config.get("mode") != "master" or config.get("publish_path"):
+        return True
+
+    selected = filedialog.askdirectory(
+        parent=root,
+        title="Pilih folder published di SALAK",
+        mustexist=True,
+    )
+    if not selected:
+        return False
+
+    target = Path(selected).resolve()
+    if target.name.lower() != "published":
+        published_child = target / "published"
+        if published_child.is_dir():
+            target = published_child.resolve()
+        else:
+            raise ValueError(
+                "Pilih folder bernama 'published' yang sudah ada di SALAK. "
+                "DELIMOLD tidak membuat folder publikasi baru."
+            )
+
+    config["publish_path"] = str(target)
+    config["publish_on_start"] = True
+    save_config(config, base)
+    return True
+
+
 def main():
     base = application_directory()
     try:
@@ -51,6 +81,9 @@ def main():
             raise ValueError("Mode yang didukung adalah master atau viewer.")
         root = tk.Tk()
         root.withdraw()
+        if not select_published_salak_folder(root, config, base):
+            root.destroy()
+            return 0
 
         repository = None
         use_cases = None
