@@ -248,18 +248,9 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.filter_fields_frame.pack(fill="x")
         self._build_filters()
         tk.Frame(surface, bg=LINE, height=1).pack(fill="x")
-        tablebox = tk.Frame(surface, bg=WHITE); tablebox.pack(fill="both", expand=True)
-        horizontal_scroll = RoundedScrollbar(
-            tablebox, lambda *args: self.tree.xview(*args), orient="horizontal")
-        horizontal_scroll.pack(side="bottom", fill="x", padx=(5, 20), pady=(0, 3))
-        table_area = tk.Frame(tablebox, bg=WHITE); table_area.pack(fill="both", expand=True)
-        self.tree = ttk.Treeview(table_area, show="headings", selectmode="browse", height=7)
-        self.tree.pack(side="left", fill="both", expand=True)
-        scroll = RoundedScrollbar(table_area, self.tree.yview)
-        scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
-        self.tree.configure(yscrollcommand=scroll.set, xscrollcommand=horizontal_scroll.set)
-        self.tree.bind("<Double-1>", lambda _e: self.edit_record())
-        actions_bottom = tk.Frame(surface, bg=WHITE); actions_bottom.pack(fill="x", padx=10, pady=7)
+        actions_bottom = tk.Frame(surface, bg=WHITE)
+        actions_bottom.pack(side="bottom", fill="x", padx=10, pady=(4, 7))
+        tk.Frame(actions_bottom, bg=LINE, height=1).pack(fill="x", pady=(0, 5))
         self.row_action_buttons = []
         if self.mode != "viewer" and self.account.role != "VIEWER":
             b = RoundedToolbarButton(actions_bottom, "Edit", self.edit_record)
@@ -281,6 +272,20 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.page_label.pack(side="right", padx=6)
         self.previous_page_button = RoundedToolbarButton(actions_bottom, "‹ Sebelumnya", self.previous_page)
         self.previous_page_button.pack(side="right", padx=(0, 6), pady=2)
+
+        tablebox = tk.Frame(surface, bg=WHITE)
+        tablebox.pack(fill="both", expand=True)
+        horizontal_scroll = RoundedScrollbar(
+            tablebox, lambda *args: self.tree.xview(*args), orient="horizontal")
+        horizontal_scroll.pack(side="bottom", fill="x", padx=(5, 20), pady=(0, 3))
+        table_area = tk.Frame(tablebox, bg=WHITE)
+        table_area.pack(fill="both", expand=True)
+        self.tree = ttk.Treeview(table_area, show="headings", selectmode="browse", height=5)
+        self.tree.pack(side="left", fill="both", expand=True)
+        scroll = RoundedScrollbar(table_area, self.tree.yview)
+        scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
+        self.tree.configure(yscrollcommand=scroll.set, xscrollcommand=horizontal_scroll.set)
+        self.tree.bind("<Double-1>", lambda _e: self.edit_record())
         self._schedule_auto_refresh()
 
     def _schedule_auto_refresh(self):
