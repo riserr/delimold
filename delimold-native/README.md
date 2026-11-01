@@ -46,7 +46,7 @@ app/
 └── data/seed/catalog.json          # seed aplikasi dalam JSON murni
 ```
 
-Aturan dependensi mengarah ke dalam: domain tidak mengenal Tkinter atau SQLite; use case bergantung pada kontrak di `application/ports.py`; `main.py` merakit SQLite, publisher, use case, dan UI. Snapshot disaring di use case; publisher hanya menulis objek yang diterimanya.
+Aturan dependensi mengarah ke dalam: domain tidak mengenal Tkinter atau SQLite; use case menyatakan kontrak repository, seed reader, publisher, dan exporter melalui tipe port di `application/ports.py`; adapter mengimplementasikan port tersebut. `main.py` hanya merakit adapter, use case, konfigurasi, dan UI. Use case mengatur inisialisasi katalog; seed reader menangani pembacaan JSON. Snapshot disaring di use case; publisher hanya menulis objek yang diterimanya.
 
 Daftar utama dimuat per halaman dari SQLite. Pencarian, filter, dan ringkasan dihitung melalui indeks katalog di database. Ekspor Excel atau PDF mengambil seluruh hasil terfilter hanya ketika pengguna meminta ekspor/cetak.
 

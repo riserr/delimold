@@ -1,5 +1,4 @@
 """Composition root for the standalone DELIMOLD desktop application."""
-import json
 import sys
 import tkinter as tk
 import traceback
@@ -8,6 +7,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 from app.adapters.salak_publisher import JsonSnapshotPublisher, JsonSnapshotReader
+from app.adapters.seed_catalog_reader import JsonSeedCatalogReader
 from app.adapters.configuration import load_config, local_data_directory, resolve_path
 from app.adapters.excel_adapter import OpenpyxlWorkbookAdapter
 from app.adapters.pdf_adapter import ReportLabPdfAdapter
@@ -64,6 +64,7 @@ def main():
         try:
             publisher = JsonSnapshotPublisher()
             reader = JsonSnapshotReader()
+            seed_reader = JsonSeedCatalogReader()
             workbook = OpenpyxlWorkbookAdapter()
             pdf_exporter = ReportLabPdfAdapter()
             if config["mode"] == "master":
@@ -73,12 +74,11 @@ def main():
                 if seed_path and not seed_path.is_file():
                     source_seed = base / "app" / "data" / "seed" / "catalog.json"
                     seed_path = source_seed if source_seed.is_file() else seed_path
-                if repository.is_empty() and seed_path and seed_path.is_file():
-                    with seed_path.open("r", encoding="utf-8") as stream:
-                        repository.import_catalog(json.load(stream), publish_required=True)
                 use_cases = DelimoldUseCases(repository, publisher, reader,
                                              resolve_path(base, config.get("publish_path", "")),
-                                             workbook, pdf_exporter)
+                                             workbook, pdf_exporter, seed_reader)
+                if seed_path and seed_path.is_file():
+                    use_cases.initialize_catalog_if_empty(seed_path)
                 if config.get("publish_on_start", True) and config.get("publish_path"):
                     try:
                         use_cases.publish_pending(force=True)

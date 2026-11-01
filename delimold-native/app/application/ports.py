@@ -80,6 +80,12 @@ class SnapshotReader(ABC):
     def read(self, path): ...
 
 
+class SeedCatalogReader(ABC):
+    """Reads the immutable starter catalog from its packaged representation."""
+    @abstractmethod
+    def read(self, path): ...
+
+
 class WorkbookPort(ABC):
     @abstractmethod
     def read_rows(self, path): ...

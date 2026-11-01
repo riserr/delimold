@@ -3,22 +3,39 @@ import base64
 import hashlib
 import hmac
 import os
-import time
+from typing import Optional
 
+from app.application.ports import (CatalogRepository, PdfExporterPort, SnapshotPublisher,
+                                   SeedCatalogReader, SnapshotReader, WorkbookPort)
 from app.domain.errors import AuthenticationFailed, DataNotFound, PublishError, ValidationError
 from app.domain.models import Actor, PublicSnapshot, SaveResult
 from app.domain.permissions import PUBLIC_COLLECTIONS, SUPERVISOR_COLLECTIONS, can_manage_accounts, require_access
 
 
 class DelimoldUseCases:
-    def __init__(self, repository, publisher, snapshot_reader=None, publish_path="",
-                 workbook=None, pdf_exporter=None):
+    def __init__(self, repository: Optional[CatalogRepository], publisher: SnapshotPublisher,
+                 snapshot_reader: Optional[SnapshotReader] = None, publish_path: str = "",
+                 workbook: Optional[WorkbookPort] = None,
+                 pdf_exporter: Optional[PdfExporterPort] = None,
+                 seed_reader: Optional[SeedCatalogReader] = None):
         self._repository = repository
         self._publisher = publisher
         self._snapshot_reader = snapshot_reader
         self._publish_path = publish_path
         self._workbook = workbook
         self._pdf_exporter = pdf_exporter
+        self._seed_reader = seed_reader
+
+    def initialize_catalog_if_empty(self, seed_path):
+        """Import the packaged catalog only when the local repository is empty."""
+        if self._repository is None:
+            raise ValidationError("Database utama belum disiapkan.")
+        if not self._repository.is_empty():
+            return False
+        if self._seed_reader is None:
+            raise ValidationError("Pembaca katalog awal belum disiapkan.")
+        self._repository.import_catalog(self._seed_reader.read(seed_path), publish_required=True)
+        return True
 
     def read_excel_rows(self, actor, collection, path):
         require_access(actor, "import", collection)
