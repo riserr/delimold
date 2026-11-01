@@ -25,7 +25,8 @@ class JsonSnapshotPublisher(SnapshotPublisher):
         target = Path(destination)
         try:
             with _destination_lock(target):
-                target.mkdir(parents=True, exist_ok=True)
+                if not target.is_dir():
+                    raise FileNotFoundError("Folder publikasi SALAK belum tersedia: %s" % target)
                 fd, temporary = tempfile.mkstemp(prefix=".delimold-", suffix=".tmp", dir=str(target))
                 try:
                     with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
