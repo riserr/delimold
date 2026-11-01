@@ -1,0 +1,29 @@
+DELIMOLD Python Desktop — Windows x86
+
+Tidak perlu memasang Python, browser, atau aplikasi tambahan pada komputer pengguna.
+Jalankan App\DELIMOLD.exe. Tampilan berjalan sebagai aplikasi desktop native.
+
+ISI PAKET
+- TENDERLOIN: aplikasi utama, database lokal, seed katalog checkpoint v12.
+- ENGINEER: aplikasi client yang terhubung ke TENDERLOIN melalui LAN.
+- SALAK: viewer baca-saja dari published-python\catalog.json.
+
+CARA MENYIAPKAN
+1. Simpan salinan cadangan aplikasi dan data yang sedang dipakai terlebih dahulu.
+2. Ekstrak hanya folder peran yang sesuai ke komputer TENDERLOIN, ENGINEER, atau SALAK.
+3. Untuk pembaruan instalasi, salin berkas program dari folder App. Jangan menimpa atau menghapus Database, files, maupun published yang sudah ada.
+4. Di TENDERLOIN, jalankan App\DELIMOLD.exe. Pada database baru, katalog v12 dimuat otomatis dan aplikasi meminta pembuatan akun Supervisor pertama.
+5. Biarkan DELIMOLD tetap berjalan di TENDERLOIN agar komputer ENGINEER dapat tersambung.
+6. Di ENGINEER, periksa server_host pada App\config.json bila nama komputer TENDERLOIN berbeda.
+7. Di SALAK, viewer membaca published-python\catalog.json dari folder App yang sama. TENDERLOIN perlu memiliki hak tulis ke folder publikasi SALAK pada config.json. Folder baru ini terpisah agar published v12 lama tetap aman.
+
+PENTING
+- Seed v12 dalam paket berisi 869 cetakan, 108 container, dan 89 pattern.
+- Seed checkpoint tidak berisi akun lama, project aktif, atau data pembelian live. Database aplikasi lama tidak otomatis dikonversi. Jangan mengganti data kantor sebelum database live diperiksa dan dipindahkan.
+- Pembelian hanya untuk Supervisor dan tidak ikut dipublikasikan ke SALAK.
+- ENGINEER perlu koneksi LAN ke TENDERLOIN pada port 8766. Port ini dipisah dari server v12 yang memakai 8765. Aturan firewall jaringan harus sudah mengizinkan koneksi tersebut.
+- Komputer SALAK hanya dapat melihat snapshot yang telah diterbitkan. Jika snapshot belum tersedia, buka kembali DELIMOLD di TENDERLOIN dan cek publish_path.
+- Tidak ada browser yang dibuka. Aplikasi tidak memerlukan internet setelah paket disiapkan.
+
+KOMPATIBILITAS
+Paket dibangun dengan Python 3.8 32-bit agar dapat berjalan pada Windows x86/x64 yang lebih lama. Lakukan pemeriksaan buka/jalankan pada komputer Windows 7 kantor sebelum pemakaian operasional.

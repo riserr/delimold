@@ -1,0 +1,9 @@
+{
+  "mode": "master",
+  "database_path": "Database/delimold.sqlite3",
+  "seed_path": "seed/catalog.js",
+  "api_host": "0.0.0.0",
+  "api_port": 8766,
+  "publish_path": "",
+  "publish_on_start": false
+}
