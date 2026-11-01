@@ -14,7 +14,7 @@ def encode_json(value):
 
 
 class CatalogClient:
-    def __init__(self, host, port=8765):
+    def __init__(self, host, port=8766):
         self.host = host
         self.port = int(port)
         self.token = None
@@ -74,7 +74,7 @@ class CatalogClient:
 
 
 class CatalogApi:
-    def __init__(self, store, host="0.0.0.0", port=8765, publish_path=None):
+    def __init__(self, store, host="0.0.0.0", port=8766, publish_path=None):
         self.store = store
         self.host = host
         self.port = int(port)
