@@ -34,10 +34,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$root/APLIKASI" | Out-Null
           Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/APLIKASI/DELIMOLD.exe"
           Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/APLIKASI/RUNTIME"
+          Copy-Item -Recurse -Force "app" "$root/APLIKASI/app"
           Copy-Item "config.master.example.json" "$root/APLIKASI/config.json"
           if (Test-Path "app/data/seed/catalog.json") {
-            New-Item -ItemType Directory -Force -Path "$root/APLIKASI/seed" | Out-Null
-            Copy-Item "app/data/seed/catalog.json" "$root/APLIKASI/seed/catalog.json"
+            New-Item -ItemType Directory -Force -Path "$root/APLIKASI/app/data/seed" | Out-Null
+            Copy-Item "app/data/seed/catalog.json" "$root/APLIKASI/app/data/seed/catalog.json"
           }
           Copy-Item "BACA-DULU-INDONESIA.txt" "release/BACA-DULU.txt"
           Compress-Archive -Path "release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
