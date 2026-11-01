@@ -1,31 +1,31 @@
 # DELIMOLD Native Python
 
-Paket Windows portable tanpa browser dan tanpa instalasi. Program dijalankan di komputer TENDERLOIN dengan klik ganda `TENDERLOIN\APLIKASI\DELIMOLD.exe`; tidak ada file BAT di paket.
+Paket portable Windows x86 berisi aplikasi master TENDERLOIN, alat pemilih folder SALAK, dan aplikasi Viewer read-only untuk SALAK.
 
-## Susunan folder paket
+## Isi paket
 
 ```text
 TENDERLOIN/
 ├── APLIKASI/
-│   ├── DELIMOLD.exe   # aplikasi yang dibuka pengguna
-│   ├── config.json    # konfigurasi awal
-│   ├── app/           # source Python DELIMOLD, untuk dibedah/dipelajari
-│   │   ├── main.py
-│   │   ├── domain/
-│   │   ├── application/
-│   │   ├── adapters/
-│   │   └── data/seed/catalog.json
-│   └── RUNTIME/       # Python runtime dan berkas pendukung portable
+│   ├── DELIMOLD.exe
+│   ├── Pilih-Published-SALAK.exe
+│   └── RUNTIME/
 └── DATABASE/
-    ├── README.txt
-    └── delimold.sqlite3  # database utama; dibuat saat aplikasi pertama kali dibuka
+    └── delimold.sqlite3
+
+SALAK/
+├── DELIMOLD-Viewer.exe
+├── config.json
+├── RUNTIME/
+└── published/
+    └── catalog.json    # snapshot baca-saja dari TENDERLOIN
 ```
 
-Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKASI`, `APLIKASI\RUNTIME`, dan `DATABASE` tetap utuh. Folder `app` berisi source Python yang mudah diperiksa; EXE menjalankan hasil build dari source tersebut dan tidak membaca file `.py` saat dibuka. `RUNTIME` menyediakan komponen portable agar komputer tidak perlu memasang apa pun. Database kerja berada di `TENDERLOIN\DATABASE\delimold.sqlite3`, terpisah dari aplikasi agar pembaruan folder `APLIKASI` tidak menghapus akun dan data. Adapter konfigurasi menghitung root paket dari lokasi aplikasi, menyimpan path relatif di `%LOCALAPPDATA%\DELIMOLD\config.json`, lalu menyelesaikannya saat startup. Karena itu paket dapat dipindahkan bersama folder `APLIKASI` dan `DATABASE`. Konfigurasi pribadi tetap di `%LOCALAPPDATA%`.
+Di TENDERLOIN, jalankan `Pilih-Published-SALAK.exe` untuk memilih folder SALAK yang sudah ada dan bernama `published`. Setelah lokasi tersimpan, jalankan `DELIMOLD.exe`. Di SALAK, jalankan `DELIMOLD-Viewer.exe`; Viewer hanya membaca `published/catalog.json` dan tidak mengakses database TENDERLOIN.
 
 ## Lokasi data
 
-Saat pertama dibuka, DELIMOLD meminta pengguna memilih folder `published` yang sudah ada di SALAK sebelum membuka database. Pilihan disimpan di `%LOCALAPPDATA%\\DELIMOLD\\config.json` dan dipakai kembali pada pembukaan berikutnya. DELIMOLD tidak membuat folder publikasi di SALAK; snapshot baca-saja ditulis langsung ke folder `published` yang dipilih. Database kerja berada di `TENDERLOIN\\DATABASE\\delimold.sqlite3`.
+`Pilih-Published-SALAK.exe` menyimpan pilihan ke `%LOCALAPPDATA%\\DELIMOLD\\config.json`. Pilihan itu dipakai lagi oleh aplikasi master. Pemilih dan publisher tidak membuat folder SALAK baru. Jika folder SALAK tidak tersedia, data lokal tetap dapat digunakan dan publikasi akan tertunda sampai share kembali tersedia.
 
 Setelah login Supervisor, pilih `Atur lokasi data` di sidebar. Pengaturan ditampilkan di area isi aplikasi; header, sidebar, dan footer tetap terlihat. Gunakan tombol `Kembali ke data` atau pilih tab lain untuk kembali.
 Saat lokasi database diganti dari dalam aplikasi, database aktif disalin menggunakan backup SQLite, koneksi aplikasi dialihkan ke file baru, lalu konfigurasi disimpan. File tujuan yang sudah ada ditolak agar tidak tertimpa. Jika publikasi SALAK gagal, konfigurasi lokal tetap tersimpan dan pesan kegagalannya ditampilkan pada halaman pengaturan.
@@ -75,7 +75,7 @@ Validasi dibagi konsisten: `domain/validation.py` menjaga aturan bisnis record, 
 
 Resolusi path juga dipusatkan di `adapters/configuration.py`: default database, seed, lokasi database lama untuk migrasi, dan konversi path relatif/absolut. `main.py` dan UI memakai hasil resolusi tersebut dan tidak membentuk ulang default database atau fallback seed. Konfigurasi pilihan pengguna disimpan di `%LOCALAPPDATA%\DELIMOLD`; jika variabel itu tidak tersedia, aplikasi memakai `%USERPROFILE%\AppData\Local\DELIMOLD`. Setiap penyimpanan mempertahankan konfigurasi valid sebelumnya sebagai `config.json.bak`; jika file utama rusak atau hilang, aplikasi memuat dan memulihkan salinan tersebut. Jika file utama dan cadangan sama-sama rusak, aplikasi menampilkan error konfigurasi alih-alih diam-diam menghapus pilihan pengguna. Tanggung jawab UI dibagi ke mixin autentikasi, navigasi, aksi record, form, transfer data, dan layar katalog; `app_window.py` merakit mixin itu serta memegang shell/render dan siklus hidup aplikasi. Publikasi snapshot SALAK menulis berkas sementara di folder tujuan, mengganti `catalog.json` secara atomik, menserialkan publisher dalam proses, serta mencoba ulang operasi baca/ganti yang sesaat tertahan oleh Windows/SMB.
 
-Pada pembukaan pertama, aplikasi meminta folder `published` di SALAK yang sudah ada. Jika pemilih dibatalkan, aplikasi berhenti sebelum membuka database. Sesudah lokasi disimpan, aplikasi membuka database dan meminta pembuatan akun Supervisor pertama; katalog awal dari `app/data/seed/catalog.json` dimuat setelah akun berhasil dibuat. File database awal yang dibagikan hanya berisi skema kosong, tanpa akun atau record.
+Pada pembukaan pertama, jalankan pemilih SALAK lebih dahulu, lalu buka `DELIMOLD.exe`. Jika database masih kosong, aplikasi meminta pembuatan akun Supervisor pertama; katalog awal dimuat setelah akun dibuat. Di SALAK, Viewer menampilkan snapshot terakhir yang tersedia dan tetap read-only.
 
 Aturan import domain/application dan izin perubahan lokasi dijaga oleh pemeriksaan berbasis `unittest` dan pustaka standar Python. Jalankan `python -m unittest discover -s tests -v` sebelum perubahan dipaketkan.
 
