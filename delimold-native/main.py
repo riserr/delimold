@@ -17,7 +17,9 @@ from delimold.ui import NativeApp
 
 def app_root():
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent / "APLIKASI"
+        executable_dir = Path(sys.executable).resolve().parent
+        application_dir = executable_dir / "APLIKASI"
+        return application_dir if application_dir.is_dir() else executable_dir
     return Path(__file__).resolve().parent
 
 
