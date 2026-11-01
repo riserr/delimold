@@ -82,6 +82,50 @@ class RoundedToolbarButton(tk.Canvas):
 
 
 
+class RoundedSelector(tk.Canvas):
+    """Rounded selector for compact pagination choices."""
+
+    def __init__(self, parent, variable, values, command, width=60, height=31):
+        self.variable = variable
+        self.values = values
+        self.command = command
+        self.width = width
+        self.height = height
+        super().__init__(parent, width=width, height=height, bd=0,
+                         highlightthickness=0, relief="flat",
+                         bg=parent.cget("bg"), cursor="hand2")
+        self.bind("<Button-1>", self._open_menu)
+        self.bind("<Configure>", lambda _event: self._draw())
+        self._draw()
+
+    def _draw(self):
+        self.delete("all")
+        width = max(self.winfo_width(), self.width)
+        height = max(self.winfo_height(), self.height)
+        RoundedToolbarButton._rounded_rect(self, 1, 1, width-2, height-2, 7, LINE, "border")
+        RoundedToolbarButton._rounded_rect(self, 2, 2, width-3, height-3, 6, FIELD, "surface")
+        self.create_text(10, height // 2, text=self.variable.get(), anchor="w",
+                         fill=INK, font=("Segoe UI", 8))
+        self.create_polygon(width-15, height//2-2, width-9, height//2-2,
+                            width-12, height//2+2, fill=INK, outline=INK)
+
+    def _open_menu(self, _event=None):
+        menu = tk.Menu(self, tearoff=0, bg=WHITE, fg=INK,
+                       activebackground=PALE, activeforeground=INK,
+                       borderwidth=1, relief="solid")
+        for value in self.values:
+            menu.add_command(label=value, command=lambda item=value: self._select(item))
+        try:
+            menu.tk_popup(self.winfo_rootx(), self.winfo_rooty() + self.winfo_height())
+        finally:
+            menu.grab_release()
+
+    def _select(self, value):
+        self.variable.set(value)
+        self._draw()
+        self.command()
+
+
 class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
                 CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
     def __init__(self, root, config, use_cases, base_dir=None):
@@ -224,15 +268,15 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.row_count = tk.Label(actions_bottom, textvariable=self.status_text, bg=WHITE, fg=MUTED, font=("Segoe UI", 8))
         self.row_count.pack(side="left", padx=9)
         ttk.Label(actions_bottom, text="Baris per halaman").pack(side="right", padx=(6, 0))
-        self.page_box = ttk.Combobox(actions_bottom, textvariable=self.page_var, state="readonly", width=7,
-                                     values=("25", "50", "100"))
-        self.page_box.pack(side="right"); self.page_box.bind("<<ComboboxSelected>>", lambda _e: self._change_page_size())
-        self.next_page_button = ttk.Button(actions_bottom, text="Berikutnya ›", command=self.next_page)
-        self.next_page_button.pack(side="right", padx=(6, 0))
+        self.page_box = RoundedSelector(actions_bottom, self.page_var,
+                                        ("25", "50", "100", "Semua"), self._change_page_size)
+        self.page_box.pack(side="right", padx=(0, 2))
+        self.next_page_button = RoundedToolbarButton(actions_bottom, "Berikutnya ›", self.next_page)
+        self.next_page_button.pack(side="right", padx=(6, 0), pady=2)
         self.page_label = ttk.Label(actions_bottom, text="Halaman 1")
         self.page_label.pack(side="right", padx=6)
-        self.previous_page_button = ttk.Button(actions_bottom, text="‹ Sebelumnya", command=self.previous_page)
-        self.previous_page_button.pack(side="right", padx=(0, 6))
+        self.previous_page_button = RoundedToolbarButton(actions_bottom, "‹ Sebelumnya", self.previous_page)
+        self.previous_page_button.pack(side="right", padx=(0, 6), pady=2)
         self._schedule_auto_refresh()
 
     def _schedule_auto_refresh(self):
