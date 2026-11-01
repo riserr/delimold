@@ -1,7 +1,7 @@
 """Native, first-run location setup for the TENDERLOIN desktop app."""
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from uuid import uuid4
 
 from .shared_components import RoundedPanel, build_database_status
@@ -180,19 +180,27 @@ def configure_master_paths(root, base, config, force=False):
     publish_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=(0, 10))
 
     def browse_publish():
-        selected = filedialog.askdirectory(parent=root, title="Pilih folder App bersama di SALAK", mustexist=True)
+        selected = filedialog.askdirectory(parent=root, title="Pilih folder published yang sudah ada di SALAK", mustexist=True)
         if selected:
             selected_path = Path(selected)
-            target = selected_path if selected_path.name.lower() == "published-python" else selected_path / "published-python"
+            target = selected_path if selected_path.name.lower() == "published" else selected_path / "published"
+            if not target.is_dir():
+                target = selected_path
+            if target.name.lower() != "published":
+                messagebox.showerror(
+                    "Folder SALAK tidak sesuai",
+                    "Pilih folder 'published' yang sudah ada. DELIMOLD tidak membuat folder baru.",
+                    parent=root)
+                return
             publish_var.set(str(target))
 
     publish_button = _RoundedButton(publish_row, "Cari di SALAK…", browse_publish)
     publish_button.pack(side="right")
-    tk.Label(card, text="Jika memilih folder App, subfolder published-python dibuat otomatis.",
+    tk.Label(card, text="Pilih folder 'published' yang sudah ada. DELIMOLD tidak membuat folder publikasi baru.",
              bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", padx=(160, 0), pady=(8, 18))
 
     footer = tk.Frame(card, bg=CARD)
-    footer.pack(fill="x", side="bottom", pady=(16, 0))
+    footer.pack(fill="x", side="bottom", padx=(0, 8), pady=(16, 0))
     tk.Frame(footer, bg=LINE, height=1).pack(fill="x", pady=(0, 14))
     done = tk.StringVar(root, "")
     error_label = tk.Label(footer, textvariable=done, bg=CARD, fg=GREEN,
@@ -216,6 +224,9 @@ def configure_master_paths(root, base, config, force=False):
             if not publish_var.get().strip():
                 raise ValueError("Pilih folder App bersama di SALAK terlebih dahulu.")
             publish = Path(publish_var.get().strip())
+            if publish.name.lower() != "published" or not publish.is_dir():
+                raise ValueError("Pilih folder 'published' yang sudah ada di SALAK.")
+            _writable_folder(publish, create=False)
 
             updated = dict(config)
             updated.update({"mode": "master", "database_path": str(database),
@@ -229,7 +240,7 @@ def configure_master_paths(root, base, config, force=False):
             done.set("Belum tersimpan: %s" % present_error(exc))
 
     save_button = _RoundedButton(footer, "Simpan lokasi", save, primary=True)
-    save_button.pack(side="right", padx=(12, 0))
+    save_button.pack(side="right", padx=(12, 8))
 
     root.protocol("WM_DELETE_WINDOW", lambda: done.set("cancelled"))
     root.wait_variable(done)
@@ -242,24 +253,32 @@ def build_location_settings(parent, base, config, on_saved, on_back):
     default_database = Path(config["database_path"])
 
     page = tk.Frame(parent, bg=DARK)
-    page.pack(fill="both", expand=True, padx=20, pady=15)
-    tk.Label(page, text="PENGATURAN TENDERLOIN", bg=DARK, fg=MUTED,
-             font=("Segoe UI", 8)).pack(anchor="w")
-    tk.Label(page, text="Lokasi data DELIMOLD", bg=DARK, fg=TEXT,
-             font=("Segoe UI", 20)).pack(anchor="w", pady=(8, 3))
-    tk.Label(page, text="Atur database utama dan folder publikasi bersama.", bg=DARK, fg=MUTED,
-             font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 15))
+    page.pack(fill="both", expand=True, padx=26, pady=20)
+    hero = tk.Frame(page, bg="#1c2921", highlightbackground=LINE, highlightthickness=1,
+                    padx=20, pady=15)
+    hero.pack(fill="x", pady=(0, 13))
+    hero_copy = tk.Frame(hero, bg="#1c2921")
+    hero_copy.pack(side="left", fill="x", expand=True)
+    tk.Label(hero_copy, text="PENGATURAN TENDERLOIN", bg="#1c2921", fg=GREEN,
+             font=("Segoe UI", 8, "bold")).pack(anchor="w")
+    tk.Label(hero_copy, text="Lokasi data DELIMOLD", bg="#1c2921", fg=TEXT,
+             font=("Segoe UI", 20, "bold")).pack(anchor="w", pady=(4, 2))
+    tk.Label(hero_copy, text="Database utama tetap lokal. Snapshot untuk SALAK ditulis ke folder published yang dipilih.",
+             bg="#1c2921", fg=MUTED, font=("Segoe UI", 9),
+             wraplength=760, justify="left").pack(anchor="w")
+    tk.Label(hero, text="TENDERLOIN  →  SALAK", bg="#26382d", fg=GREEN,
+             padx=12, pady=8, font=("Segoe UI", 9, "bold")).pack(side="right", padx=(14, 0))
     build_database_status(page, "master")
 
     card = RoundedPanel(page, fill=CARD, border=LINE, radius=8, padx=18, pady=16)
-    card.pack(fill="both", expand=True)
+    card.pack(fill="both", expand=True, padx=(0, 5), pady=(0, 6))
     tk.Label(card, text="Database TENDERLOIN", bg=CARD, fg=TEXT,
              font=("Segoe UI", 12, "bold")).pack(anchor="w")
     tk.Label(card, text="Database aktif berada di komputer TENDERLOIN.", bg=CARD, fg=MUTED,
              font=("Segoe UI", 9)).pack(anchor="w", pady=(7, 12))
 
     database_row = tk.Frame(card, bg=CARD)
-    database_row.pack(fill="x")
+    database_row.pack(fill="x", padx=(0, 8))
     tk.Label(database_row, text="File database", width=18, anchor="w", bg=CARD, fg=TEXT,
              font=("Segoe UI", 9, "bold")).pack(side="left")
     database_var = tk.StringVar(parent, str(default_database))
@@ -290,7 +309,7 @@ def build_location_settings(parent, base, config, on_saved, on_back):
              font=("Segoe UI", 9)).pack(anchor="w", pady=(7, 11))
 
     publish_row = tk.Frame(card, bg=CARD)
-    publish_row.pack(fill="x")
+    publish_row.pack(fill="x", padx=(0, 8))
     tk.Label(publish_row, text="Folder tujuan", width=18, anchor="w", bg=CARD, fg=TEXT,
              font=("Segoe UI", 9, "bold")).pack(side="left")
     publish_var = tk.StringVar(parent, config.get("publish_path", ""))
@@ -302,18 +321,26 @@ def build_location_settings(parent, base, config, on_saved, on_back):
 
     def browse_publish():
         selected = filedialog.askdirectory(parent=parent.winfo_toplevel(),
-                                           title="Pilih folder App bersama di SALAK", mustexist=True)
+                                           title="Pilih folder published yang sudah ada di SALAK", mustexist=True)
         if selected:
             selected_path = Path(selected)
-            target = selected_path if selected_path.name.lower() == "published-python" else selected_path / "published-python"
+            target = selected_path if selected_path.name.lower() == "published" else selected_path / "published"
+            if not target.is_dir():
+                target = selected_path
+            if target.name.lower() != "published":
+                messagebox.showerror(
+                    "Folder SALAK tidak sesuai",
+                    "Pilih folder 'published' yang sudah ada. DELIMOLD tidak membuat folder baru.",
+                    parent=parent.winfo_toplevel())
+                return
             publish_var.set(str(target))
 
     _RoundedButton(publish_row, "Cari di SALAK…", browse_publish).pack(side="right")
-    tk.Label(card, text="Jika memilih folder App, subfolder published-python dibuat otomatis.",
+    tk.Label(card, text="Pilih folder 'published' yang sudah ada. DELIMOLD tidak membuat folder publikasi baru.",
              bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", padx=(144, 0), pady=(7, 12))
 
     footer = tk.Frame(card, bg=CARD)
-    footer.pack(fill="x", side="bottom", pady=(10, 0))
+    footer.pack(fill="x", side="bottom", padx=(0, 8), pady=(10, 0))
     tk.Frame(footer, bg=LINE, height=1).pack(fill="x", pady=(0, 11))
     status = tk.Label(footer, text="", bg=CARD, fg=GREEN, font=("Segoe UI", 8), anchor="w")
     status.pack(side="left", fill="x", expand=True)
@@ -335,6 +362,9 @@ def build_location_settings(parent, base, config, on_saved, on_back):
             if not publish_var.get().strip():
                 raise ValueError("Pilih folder publikasi di SALAK terlebih dahulu.")
             publish = Path(publish_var.get().strip()).expanduser()
+            if publish.name.lower() != "published" or not publish.is_dir():
+                raise ValueError("Pilih folder 'published' yang sudah ada di SALAK.")
+            _writable_folder(publish, create=False)
 
             updated = dict(config)
             updated.update({"mode": "master", "database_path": str(database),
@@ -349,5 +379,5 @@ def build_location_settings(parent, base, config, on_saved, on_back):
             status.configure(fg="#f1a79b", text="Belum tersimpan: %s" % present_error(exc))
 
     _RoundedButton(footer, "Kembali ke data", on_back).pack(side="right", padx=(0, 9))
-    _RoundedButton(footer, "Simpan lokasi", save, primary=True).pack(side="right", padx=(9, 0))
+    _RoundedButton(footer, "Simpan lokasi", save, primary=True).pack(side="right", padx=(9, 8))
     return page
