@@ -1,17 +1,19 @@
 # DELIMOLD Native Python
 
-Paket Windows portable tanpa browser dan tanpa instalasi. Program dijalankan di komputer TENDERLOIN dengan klik ganda `TENDERLOIN\DELIMOLD.exe`; tidak ada file BAT di paket.
+Paket Windows portable tanpa browser dan tanpa instalasi. Program dijalankan di komputer TENDERLOIN dengan klik ganda `TENDERLOIN\APLIKASI\DELIMOLD.exe`; tidak ada file BAT di paket.
 
 ## Susunan folder paket
 
 ```text
 TENDERLOIN/
-├── DELIMOLD.exe       # aplikasi yang dibuka pengguna
-├── APLIKASI/          # config.json dan seed/catalog.js
-└── RUNTIME/           # Python runtime dan berkas pendukung portable
+└── APLIKASI/
+    ├── DELIMOLD.exe   # aplikasi yang dibuka pengguna
+    ├── config.json    # pengaturan TENDERLOIN
+    ├── seed/          # katalog data awal v12
+    └── RUNTIME/       # Python runtime dan berkas pendukung portable
 ```
 
-Pertahankan ketiga bagian itu berdampingan. `APLIKASI` berisi pengaturan dan data awal DELIMOLD; `RUNTIME` menyediakan semua komponen Python agar komputer tidak perlu memasang apa pun. Database kerja tetap disimpan terpisah di `%LOCALAPPDATA%\DELIMOLD\delimold.sqlite3`.
+Pengguna membuka `TENDERLOIN\APLIKASI\DELIMOLD.exe`. Pertahankan folder `APLIKASI` dan subfolder `APLIKASI\RUNTIME` tetap utuh. `APLIKASI` memuat program, konfigurasi, dan data awal; `RUNTIME` menyediakan komponen Python agar komputer tidak perlu memasang apa pun. Database kerja tetap disimpan terpisah di `%LOCALAPPDATA%\DELIMOLD\delimold.sqlite3`.
 
 ## Lokasi data
 
