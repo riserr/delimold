@@ -24,18 +24,20 @@ jobs:
           python -m pip install -r delimold-native/requirements-build.txt
       - name: Build the native desktop executable
         working-directory: delimold-native
-        run: python -m PyInstaller --noconfirm --clean --onedir --windowed --name DELIMOLD main.py
+        run: python -m PyInstaller --noconfirm --clean --onedir --contents-directory RUNTIME --windowed --name DELIMOLD main.py
       - name: Assemble direct-launch TENDERLOIN package without BAT files
         shell: pwsh
         working-directory: delimold-native
         run: |
           $root = "release/TENDERLOIN"
           New-Item -ItemType Directory -Force -Path $root | Out-Null
-          Copy-Item -Recurse -Force "dist/DELIMOLD/*" "$root/"
-          Copy-Item "config.master.example.json" "$root/config.json"
+          New-Item -ItemType Directory -Force -Path "$root/APLIKASI" | Out-Null
+          Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/DELIMOLD.exe"
+          Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/RUNTIME"
+          Copy-Item "config.master.example.json" "$root/APLIKASI/config.json"
           if (Test-Path "seed/catalog.js") {
-            New-Item -ItemType Directory -Force -Path "$root/seed" | Out-Null
-            Copy-Item "seed/catalog.js" "$root/seed/catalog.js"
+            New-Item -ItemType Directory -Force -Path "$root/APLIKASI/seed" | Out-Null
+            Copy-Item "seed/catalog.js" "$root/APLIKASI/seed/catalog.js"
           }
           Copy-Item "BACA-DULU-INDONESIA.txt" "release/BACA-DULU.txt"
           Compress-Archive -Path "release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
