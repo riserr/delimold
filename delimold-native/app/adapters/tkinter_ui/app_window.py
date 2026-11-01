@@ -6,7 +6,7 @@ from tkinter import ttk
 from pathlib import Path
 
 from .app_window_theme import CARD, DARK, FIELD, GREEN, INK, LINE, MUTED, WHITE
-from .shared_components import RoundedScrollbar, build_database_status, build_header, build_sidebar
+from .shared_components import RoundedPanel, RoundedScrollbar, build_database_status, build_header, build_sidebar
 from .catalog_screen import CatalogScreenMixin
 from .record_forms import RecordFormsMixin
 from .data_transfer import DataTransferMixin
@@ -54,8 +54,8 @@ class RoundedToolbarButton(tk.Canvas):
         else:
             border = self.border
             text_color = self.label_color
-        self._rounded_rect(0, 0, self.width - 1, self.height - 1, 8, border, "border")
-        self._rounded_rect(1, 1, self.width - 2, self.height - 2, 7, fill, "surface")
+        self._rounded_rect(0, 0, self.width - 1, self.height - 1, 5, border, "border")
+        self._rounded_rect(1, 1, self.width - 2, self.height - 2, 4, fill, "surface")
         self.create_text(self.width // 2, self.height // 2, text=self.label, fill=text_color,
                          font=self.font, tags="label")
 
@@ -211,21 +211,23 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         content = tk.Frame(self.content_host, bg=DARK)
         content.pack(fill="both", expand=True, padx=20, pady=15)
         tk.Label(content, text="MOLD MANAGEMENT   ·   DESKTOP PORTABLE", bg=DARK, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
-        self.title_label = tk.Label(content, text="Data Cetakan", bg=DARK, fg=INK, font=("Segoe UI", 20, "normal"))
+        self.title_label = tk.Label(content, text="Data Cetakan", bg=DARK, fg=INK, font=("Segoe UI", 22, "normal"))
         self.title_label.pack(anchor="w", pady=(3, 1))
         tk.Label(content, text="Kelola dan telusuri data cetakan dalam satu tempat.", bg=DARK, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w")
         _status_frame, self.connection_label = build_database_status(content, self.mode)
         self.stats_frame = tk.Frame(content, bg=DARK)
         self.stats_frame.pack(fill="x", pady=(0, 12))
         self._make_stats()
-        panel = tk.Frame(content, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
+        panel = RoundedPanel(content, fill=WHITE, border=LINE, radius=8)
         panel.pack(fill="both", expand=True)
-        head = tk.Frame(panel, bg=WHITE); head.pack(fill="x", padx=14, pady=(12, 8))
+        surface = panel.content
+        head = tk.Frame(surface, bg=WHITE); head.pack(fill="x", padx=14, pady=(12, 8))
+        tk.Frame(surface, bg=LINE, height=1).pack(fill="x")
         self.list_label = tk.Label(head, text="Daftar cetakan", bg=WHITE, fg=INK, font=("Segoe UI", 10, "bold"))
         self.list_label.pack(anchor="w")
         tk.Label(head, text="Ekspor dan cetak mengikuti pencarian serta filter yang aktif.", bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", pady=(3, 0))
-        self.actions = tk.Frame(panel, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
-        self.actions.pack(fill="x")
+        self.actions = tk.Frame(surface, bg=WHITE)
+        self.actions.pack(fill="x", padx=10, pady=7)
         self.toolbar_buttons = {}
         self._action_button("＋ Tambah", self.add_record, primary=True)
         self._action_button("↑ Impor Excel", self.import_excel)
@@ -234,8 +236,9 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.readonly_label = tk.Label(self.actions, text="Akses baca-saja", bg="#493c27", fg="#f3d59b", padx=8, pady=5, font=("Segoe UI", 8))
         if self.mode == "viewer" or self.account.role == "VIEWER":
             self._set_readonly()
-        self.filters = tk.Frame(panel, bg=WHITE)
-        self.filters.pack(fill="x", padx=11, pady=9)
+        tk.Frame(surface, bg=LINE, height=1).pack(fill="x")
+        self.filters = tk.Frame(surface, bg=WHITE)
+        self.filters.pack(fill="x", padx=10, pady=9)
         search_row = tk.Frame(self.filters, bg=WHITE)
         search_row.pack(fill="x", pady=(0, 7))
         ttk.Entry(search_row, textvariable=self.search_var).pack(side="left", fill="x", expand=True, padx=(0, 7))
@@ -244,7 +247,8 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         self.filter_fields_frame = tk.Frame(self.filters, bg=WHITE)
         self.filter_fields_frame.pack(fill="x")
         self._build_filters()
-        tablebox = tk.Frame(panel, bg=WHITE); tablebox.pack(fill="both", expand=True)
+        tk.Frame(surface, bg=LINE, height=1).pack(fill="x")
+        tablebox = tk.Frame(surface, bg=WHITE); tablebox.pack(fill="both", expand=True)
         horizontal_scroll = RoundedScrollbar(
             tablebox, lambda *args: self.tree.xview(*args), orient="horizontal")
         horizontal_scroll.pack(side="bottom", fill="x", padx=(5, 20), pady=(0, 3))
@@ -255,7 +259,7 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
         self.tree.configure(yscrollcommand=scroll.set, xscrollcommand=horizontal_scroll.set)
         self.tree.bind("<Double-1>", lambda _e: self.edit_record())
-        actions_bottom = tk.Frame(panel, bg=WHITE); actions_bottom.pack(fill="x", padx=10, pady=7)
+        actions_bottom = tk.Frame(surface, bg=WHITE); actions_bottom.pack(fill="x", padx=10, pady=7)
         self.row_action_buttons = []
         if self.mode != "viewer" and self.account.role != "VIEWER":
             b = RoundedToolbarButton(actions_bottom, "Edit", self.edit_record)
