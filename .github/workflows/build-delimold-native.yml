@@ -32,8 +32,8 @@ jobs:
           $root = "release/TENDERLOIN"
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           New-Item -ItemType Directory -Force -Path "$root/APLIKASI" | Out-Null
-          Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/DELIMOLD.exe"
-          Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/RUNTIME"
+          Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/APLIKASI/DELIMOLD.exe"
+          Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/APLIKASI/RUNTIME"
           Copy-Item "config.master.example.json" "$root/APLIKASI/config.json"
           if (Test-Path "seed/catalog.js") {
             New-Item -ItemType Directory -Force -Path "$root/APLIKASI/seed" | Out-Null
