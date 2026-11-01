@@ -6,7 +6,7 @@ from tkinter import ttk
 from pathlib import Path
 
 from .app_window_theme import CARD, DARK, FIELD, GREEN, INK, LINE, MUTED, WHITE
-from .shared_components import build_database_status, build_header, build_sidebar
+from .shared_components import RoundedScrollbar, build_database_status, build_header, build_sidebar
 from .catalog_screen import CatalogScreenMixin
 from .record_forms import RecordFormsMixin
 from .data_transfer import DataTransferMixin
@@ -184,7 +184,7 @@ class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
         tablebox = tk.Frame(panel, bg=WHITE); tablebox.pack(fill="both", expand=True)
         self.tree = ttk.Treeview(tablebox, show="headings", selectmode="browse")
         self.tree.pack(side="left", fill="both", expand=True)
-        scroll = ttk.Scrollbar(tablebox, orient="vertical", command=self.tree.yview); scroll.pack(side="right", fill="y")
+        scroll = RoundedScrollbar(tablebox, self.tree.yview); scroll.pack(side="right", fill="y", padx=(2, 5), pady=3)
         self.tree.configure(yscrollcommand=scroll.set)
         self.tree.bind("<Double-1>", lambda _e: self.edit_record())
         actions_bottom = tk.Frame(panel, bg=WHITE); actions_bottom.pack(fill="x", padx=10, pady=7)
