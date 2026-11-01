@@ -1,10 +1,12 @@
 """Tkinter record_forms for the DELIMOLD desktop adapter."""
 import json
-import re
 import tkinter as tk
 import time
 from tkinter import ttk
 
+from app.application.dto import RecordSaveRequest, UserSaveRequest
+from app.domain.validation import validate_status_transition
+from .error_presenter import present_error
 from .app_window_theme import INK
 from .catalog_config import FIELDS, TABS
 
@@ -151,33 +153,11 @@ class RecordFormsMixin:
                     if self.collection == "molds" and field == "spacer" and content not in ("", None):
                         content = float(content) if "." in str(content) else int(content)
                     value[field] = content
-                if self.collection == "purchases":
-                    if not re.match(r"^\d{4}-\d\d-\d\d$", str(value.get("date", ""))):
-                        raise ValueError("Tanggal pembelian harus YYYY-MM-DD")
-                    if value.get("poReceivedDate") and not re.match(r"^\d{4}-\d\d-\d\d$", str(value["poReceivedDate"])):
-                        raise ValueError("Tanggal PO diterima harus YYYY-MM-DD atau kosong")
-                    if not value.get("spec") or not value.get("size"):
-                        raise ValueError("Kode spek dan size ban wajib diisi")
-                    try:
-                        quantity = int(value.get("quantity", 0))
-                        price = float(value.get("price", ""))
-                    except (TypeError, ValueError):
-                        raise ValueError("Jumlah mold dan harga satuan harus berupa angka")
-                    if quantity < 1 or price < 0 or not re.match(r"^\d+(\.\d{1,2})?$", str(value.get("price", ""))):
-                        raise ValueError("Jumlah mold minimal 1 dan harga maksimal dua angka desimal")
-                    if value.get("currency") not in ("USD", "RMB", "IDR"):
-                        raise ValueError("Pilih mata uang USD, RMB, atau IDR")
-                    value["quantity"] = quantity
                 if self.collection == "molds":
-                    missing = [label for field, label in (("spec", "kode spek"), ("size", "size"),
-                              ("patternId", "pattern"), ("serial", "nomor cetakan"), ("cure", "tipe masak")) if not value.get(field)]
-                    if missing:
-                        raise ValueError("Wajib diisi: %s" % ", ".join(missing))
-                    if record and str(value.get("status", "active")) != str(record.get("status", "active")):
-                        reason = str(value.get("statusReason", "")).strip()
-                        old_reason = str(record.get("statusReason", "")).strip()
-                        if not reason or reason == old_reason:
-                            raise ValueError("Isi alasan baru untuk perubahan status cetakan")
+                    if record:
+                        validate_status_transition(
+                            record.get("status"), value.get("status"),
+                            value.get("statusReason"), record.get("statusReason"))
                 # Keep v12 fields this form does not edit (for example mold
                 # sharing links, container IDs, and print metadata).
                 value = dict(record or {}, **value)
@@ -188,11 +168,12 @@ class RecordFormsMixin:
                 record_key = key or self._new_record_key(value)
                 if self.collection == "purchases":
                     value.setdefault("id", record_key)
-                self.use_cases.save_record(self.account, self.collection, record_key, value,
-                                           "edit" if key else "create")
+                self.use_cases.save_record(RecordSaveRequest(
+                    self.account, self.collection, record_key, value,
+                    "edit" if key else "create"))
                 dlg.destroy(); self.refresh()
             except Exception as exc:
-                error.set(str(exc))
+                error.set(present_error(exc))
         ttk.Button(buttons, text="Simpan", command=save).pack(side="right")
 
     def _account_form(self, username, record):
@@ -221,11 +202,10 @@ class RecordFormsMixin:
         def save():
             name = widgets[0].get().strip(); display = widgets[1].get().strip() or name; role = widgets[2].get(); password = widgets[3].get()
             try:
-                if not name: raise ValueError("Nama akun wajib diisi")
-                self.use_cases.save_user(self.account, name, display, role, password,
-                                         enabled=(record or {}).get("enabled", True),
-                                         existing=bool(username))
+                self.use_cases.save_user(UserSaveRequest(
+                    self.account, name, display, role, password,
+                    enabled=(record or {}).get("enabled", True), existing=bool(username)))
                 dlg.destroy(); self.refresh()
-            except Exception as exc: error.set(str(exc))
+            except Exception as exc: error.set(present_error(exc))
         ttk.Button(actions, text="Simpan", command=save).pack(side="left", padx=5)
         dlg.wait_window()

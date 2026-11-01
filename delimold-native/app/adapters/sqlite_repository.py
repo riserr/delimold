@@ -15,6 +15,51 @@ COLLECTIONS = ("molds", "patterns", "containers", "stickers", "pattern_art",
 
 
 class SQLiteCatalogRepository(CatalogRepository):
+    def relocate_database(self, target_path):
+        """Move the live database safely and keep this repository on the new file."""
+        target = Path(target_path).expanduser().resolve()
+        with self.lock:
+            if target == self.path.resolve():
+                return
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists():
+                raise StorageError("File database tujuan sudah ada. Pilih nama file baru agar data tidak tertimpa.")
+            temporary = target.with_name(target.name + ".migrating")
+            target_connection = None
+            replacement_connection = None
+            created_target = False
+            try:
+                if temporary.exists():
+                    temporary.unlink()
+                target_connection = sqlite3.connect(str(temporary), timeout=20)
+                self.connection.backup(target_connection)
+                target_connection.close()
+                target_connection = None
+                os.replace(str(temporary), str(target))
+                created_target = True
+                replacement_connection = sqlite3.connect(str(target), timeout=20, check_same_thread=False)
+                replacement_connection.row_factory = sqlite3.Row
+                replacement_connection.execute("PRAGMA journal_mode=WAL")
+                replacement_connection.execute("PRAGMA foreign_keys=ON")
+            except (OSError, sqlite3.Error) as exc:
+                if target_connection is not None:
+                    target_connection.close()
+                if replacement_connection is not None:
+                    replacement_connection.close()
+                try:
+                    temporary.unlink()
+                except OSError:
+                    pass
+                if created_target:
+                    try:
+                        target.unlink()
+                    except OSError:
+                        pass
+                raise StorageError("Database tidak dapat dipindahkan ke lokasi baru.") from exc
+            self.connection.close()
+            self.connection = replacement_connection
+            self.path = target
+
     @staticmethod
     def migrate_database(source_path, target_path):
         """Copy a live SQLite database safely, including committed WAL changes."""
@@ -343,6 +388,18 @@ class SQLiteCatalogRepository(CatalogRepository):
                 return required if required > published else 0
             except (sqlite3.Error, ValueError) as exc:
                 raise StorageError("Status publikasi tidak dapat dibaca.") from exc
+
+    def mark_publish_required(self, revision):
+        with self.lock:
+            try:
+                with self.connection:
+                    values = dict(self.connection.execute(
+                        "SELECT key,value FROM meta WHERE key IN ('publish_required_revision','published_revision')").fetchall())
+                    required = int(values.get("publish_required_revision", "0"))
+                    if int(revision) > required:
+                        self._set_meta("publish_required_revision", str(revision))
+            except (sqlite3.Error, TypeError, ValueError) as exc:
+                raise StorageError("Revisi publikasi tertunda tidak dapat dicatat.") from exc
 
     def mark_published(self, revision):
         with self.lock:

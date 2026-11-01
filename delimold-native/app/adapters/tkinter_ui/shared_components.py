@@ -36,9 +36,11 @@ def build_sidebar(parent, role, mode, selected, on_select, on_settings=None):
         button.pack(fill="x", padx=8, pady=2)
         buttons[key] = button
     if mode == "master" and role == "SUPERVISOR" and on_settings:
-        tk.Button(sidebar, text="⚙   Atur lokasi data", anchor="w", relief="flat", bd=0,
-                  bg=WHITE, fg=MUTED, activebackground=PALE, padx=13, pady=10,
-                  font=("Segoe UI", 9), command=on_settings).pack(fill="x", padx=8, pady=2)
+        button = tk.Button(sidebar, text="⚙   Atur lokasi data", anchor="w", relief="flat", bd=0,
+                           bg=WHITE, fg=MUTED, activebackground=PALE, padx=13, pady=10,
+                           font=("Segoe UI", 9), command=on_settings)
+        button.pack(fill="x", padx=8, pady=2)
+        buttons["settings"] = button
     tk.Frame(sidebar, bg=WHITE).pack(fill="both", expand=True)
     build_shared_footer(sidebar)
     return sidebar, buttons

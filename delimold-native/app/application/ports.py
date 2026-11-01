@@ -7,6 +7,9 @@ class CatalogRepository(ABC):
     def close(self): ...
 
     @abstractmethod
+    def relocate_database(self, target_path): ...
+
+    @abstractmethod
     def is_empty(self): ...
 
     @abstractmethod
@@ -43,6 +46,9 @@ class CatalogRepository(ABC):
     def pending_publish_revision(self): ...
 
     @abstractmethod
+    def mark_publish_required(self, revision): ...
+
+    @abstractmethod
     def mark_published(self, revision): ...
 
     @abstractmethod
@@ -68,6 +74,12 @@ class CatalogRepository(ABC):
 
     @abstractmethod
     def import_catalog(self, catalog, publish_required=False): ...
+
+
+class ConfigurationStore(ABC):
+    """Outbound port for persisting user-selected application settings."""
+    @abstractmethod
+    def save(self, config): ...
 
 
 class SnapshotPublisher(ABC):

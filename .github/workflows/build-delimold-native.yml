@@ -22,6 +22,7 @@ jobs:
         run: |
           python -m pip install pip==24.3.1
           python -m pip install -r delimold-native/requirements-build.txt
+          python -c "import struct, sys; assert sys.version_info[:3] == (3, 8, 10); assert struct.calcsize('P') * 8 == 32; print(sys.version)"
       - name: Build the native desktop executable
         working-directory: delimold-native
         run: python -m PyInstaller --noconfirm --clean --onedir --contents-directory RUNTIME --paths . --windowed --name DELIMOLD app/main.py
@@ -32,18 +33,23 @@ jobs:
           $root = "release/TENDERLOIN"
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           New-Item -ItemType Directory -Force -Path "$root/APLIKASI" | Out-Null
-          $databaseRoot = "$root/DATABASE"
-          New-Item -ItemType Directory -Force -Path $databaseRoot | Out-Null
-          Copy-Item -Recurse -Force "DATABASE/*" $databaseRoot
           Copy-Item "dist/DELIMOLD/DELIMOLD.exe" "$root/APLIKASI/DELIMOLD.exe"
           Copy-Item -Recurse -Force "dist/DELIMOLD/RUNTIME" "$root/APLIKASI/RUNTIME"
-          Copy-Item -Recurse -Force "app" "$root/APLIKASI/app"
+          $ucrt = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\Redist\ucrt\DLLs\x86"
+          if (-not (Test-Path $ucrt)) { throw "Universal CRT x86 dari Windows SDK tidak ditemukan: $ucrt" }
+          Get-ChildItem -Path $ucrt -Filter "*.dll" | Copy-Item -Destination "$root/APLIKASI" -Force
           Copy-Item "config.master.example.json" "$root/APLIKASI/config.json"
           if (Test-Path "app/data/seed/catalog.json") {
             New-Item -ItemType Directory -Force -Path "$root/APLIKASI/app/data/seed" | Out-Null
             Copy-Item "app/data/seed/catalog.json" "$root/APLIKASI/app/data/seed/catalog.json"
           }
+          New-Item -ItemType Directory -Force -Path "$root/DATABASE" | Out-Null
+          python -c "from app.adapters.sqlite_repository import SQLiteCatalogRepository; db = SQLiteCatalogRepository(r'release/TENDERLOIN/DATABASE/delimold.sqlite3'); db.close()"
+          Copy-Item "DATABASE/README.txt" "$root/DATABASE/README.txt"
           Copy-Item "BACA-DULU-INDONESIA.txt" "release/BACA-DULU.txt"
+          $pythonVersion = python -c "import sys; print(sys.version.split()[0])"
+          $pyinstallerVersion = python -c "import PyInstaller; print(PyInstaller.__version__)"
+          @("Target: Windows x86", "Python: $pythonVersion (32-bit)", "PyInstaller: $pyinstallerVersion", "Source commit: $env:GITHUB_SHA") | Set-Content -Encoding UTF8 "release/BUILD-INFO.txt"
           Compress-Archive -Path "release/*" -DestinationPath "DELIMOLD-Native-Python-Windows-x86.zip" -Force
       - uses: actions/upload-artifact@v4
         with:

@@ -3,6 +3,8 @@ import json
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from app.application.dto import CatalogPageQuery, FilterOptionsQuery, SnapshotReadRequest
+from .error_presenter import present_error
 from .app_window_theme import CARD, GREEN, LINE, MUTED, WHITE
 from .catalog_config import FILTER_FIELDS
 
@@ -10,8 +12,9 @@ from .catalog_config import FILTER_FIELDS
 class CatalogScreenMixin:
     def _fetch_catalog(self):
         if self.mode == "master":
-            return self.use_cases.catalog(self.account)
-        return self.use_cases.published_catalog(self.config["snapshot_path"])
+            return self.use_cases.catalog(self.account).as_dict()
+        return self.use_cases.published_catalog(
+            SnapshotReadRequest(self.config["snapshot_path"])).as_dict()
 
     def _selected_filters(self):
         filters = {}
@@ -100,23 +103,24 @@ class CatalogScreenMixin:
             if self.mode == "master" and self.collection not in ("accounts", "history"):
                 limit = int(self.page_var.get() or "50")
                 offset = self.page_index * limit
-                page_data = self.use_cases.catalog_page(
-                    self.account, self.collection, offset, limit,
-                    self.search_var.get().strip(), self._selected_filters())
-                self.rows = page_data["rows"]
+                page_data = self.use_cases.catalog_page(self.account, CatalogPageQuery(
+                    self.collection, offset, limit,
+                    self.search_var.get().strip(), self._selected_filters()))
+                self.rows = page_data.rows
                 self.catalog = {"collections": {self.collection: self.rows}}
-                self.catalog["collections"].update(page_data["lookups"])
-                self._page_stats = page_data["stats"]
+                self.catalog["collections"].update(page_data.lookups)
+                self._page_stats = page_data.stats
                 self.page_total = self._page_stats["total"]
                 max_page = max((self.page_total - 1) // limit, 0)
                 self.page_index = min(self.page_index, max_page)
                 if offset != self.page_index * limit:
                     return self.refresh()
             elif self.collection == "accounts":
-                self.rows = self.use_cases.list_users(self.account)
+                self.rows = {name: user.as_dict()
+                             for name, user in self.use_cases.list_users(self.account).items()}
             elif self.collection == "history":
                 history = self.use_cases.audit_rows(self.account)
-                self.rows = {str(row.get("id", i)): row for i, row in enumerate(history)}
+                self.rows = {str(row.id or i): row.as_dict() for i, row in enumerate(history)}
             else:
                 self.catalog = self._fetch_catalog()
                 self.rows = self.catalog.get("collections", {}).get(self.collection, {})
@@ -124,8 +128,9 @@ class CatalogScreenMixin:
             self._update_stats()
             self.refresh_table()
         except Exception as exc:
-            self.status_text.set("Gagal memuat data: %s" % exc)
-            messagebox.showerror("Koneksi DELIMOLD", "Data tidak dapat dimuat.\n\n%s" % exc, parent=self.root)
+            message = present_error(exc, "Data DELIMOLD tidak dapat dimuat.")
+            self.status_text.set("Gagal memuat data: %s" % message)
+            messagebox.showerror("Koneksi DELIMOLD", message, parent=self.root)
 
     @staticmethod
     def _status(value):
@@ -298,8 +303,9 @@ class CatalogScreenMixin:
         records = self.rows if isinstance(self.rows, dict) else {str(i): row for i, row in enumerate(self.rows)}
         for field, box in self.filter_boxes.items():
             if self.mode == "master" and self.collection not in ("accounts", "history"):
-                options = self.use_cases.filter_options(self.account, self.collection, field)
-                mapping = {label: value for label, value in options}
+                options = self.use_cases.filter_options(
+                    self.account, FilterOptionsQuery(self.collection, field))
+                mapping = {option.label: option.value for option in options}
                 self.filter_query_maps[field] = mapping
                 values = sorted(mapping, key=lambda value: value.lower())
             else:

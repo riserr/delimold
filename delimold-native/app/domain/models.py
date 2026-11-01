@@ -50,3 +50,24 @@ class AppConfig:
     publish_path: str
     publish_on_start: bool = True
     snapshot_path: str = ""
+
+    @classmethod
+    def from_mapping(cls, values: Mapping[str, Any]) -> "AppConfig":
+        return cls(
+            mode=str(values.get("mode", "master")),
+            database_path=str(values.get("database_path", "")),
+            seed_path=str(values.get("seed_path", "")),
+            publish_path=str(values.get("publish_path", "")),
+            publish_on_start=bool(values.get("publish_on_start", True)),
+            snapshot_path=str(values.get("snapshot_path", "")),
+        )
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "mode": self.mode,
+            "database_path": self.database_path,
+            "seed_path": self.seed_path,
+            "publish_path": self.publish_path,
+            "publish_on_start": self.publish_on_start,
+            "snapshot_path": self.snapshot_path,
+        }

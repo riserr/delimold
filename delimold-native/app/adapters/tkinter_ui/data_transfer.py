@@ -3,6 +3,10 @@ import re
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from app.application.dto import (CatalogExportQuery, ExcelExportRequest, PdfExportRequest,
+                                 RecordBatchSaveRequest, WorkbookReadRequest,
+                                 WorkbookTemplateRequest)
+from .error_presenter import present_error
 from .app_window_theme import INK, MUTED
 from .catalog_config import FIELDS, TABS
 
@@ -14,11 +18,12 @@ class DataTransferMixin:
         try:
             export_rows = self._export_view_rows()
             titles = self._column_titles()
-            self.use_cases.export_excel(self.account, self.collection, path, titles,
-                                        [values[:len(titles)] for _, _, values in export_rows])
+            rows = tuple(tuple(values[:len(titles)]) for _, _, values in export_rows)
+            self.use_cases.export_excel(ExcelExportRequest(
+                self.account, self.collection, path, tuple(titles), rows))
             messagebox.showinfo("Ekspor selesai", "%s baris diekspor sesuai filter aktif." % len(export_rows), parent=self.root)
         except Exception as exc:
-            messagebox.showerror("Gagal ekspor Excel", str(exc), parent=self.root)
+            messagebox.showerror("Gagal ekspor Excel", present_error(exc), parent=self.root)
 
     def _preview_import(self, records):
         dlg = tk.Toplevel(self.root); dlg.title("Pratinjau impor Excel"); dlg.transient(self.root); dlg.grab_set(); dlg.geometry("900x520")
@@ -43,11 +48,12 @@ class DataTransferMixin:
                 if self.collection == "purchases":
                     for key, item in batch:
                         item.setdefault("id", key)
-                self.use_cases.save_records(self.account, self.collection, batch, "import")
+                self.use_cases.save_records(RecordBatchSaveRequest(
+                    self.account, self.collection, tuple(batch), "import"))
                 dlg.destroy(); self.refresh()
                 messagebox.showinfo("Impor selesai", "%s baris berhasil ditambahkan." % len(records), parent=self.root)
             except Exception as exc:
-                error.set("Impor berhenti: %s" % exc)
+                error.set("Impor berhenti: %s" % present_error(exc))
         ttk.Button(buttons, text="Impor %s baris" % len(records), command=commit).pack(side="right", padx=5)
 
     def _import_display(self, item):
@@ -63,7 +69,8 @@ class DataTransferMixin:
         path = filedialog.askopenfilename(parent=self.root, title="Pilih workbook Excel DELIMOLD", filetypes=(("Workbook Excel", "*.xlsx"),))
         if not path: return
         try:
-            values = self.use_cases.read_excel_rows(self.account, self.collection, path)
+            values = self.use_cases.read_excel_rows(WorkbookReadRequest(
+                self.account, self.collection, path))
             if len(values) < 2:
                 messagebox.showwarning("Template kosong", "Workbook belum berisi baris data.", parent=self.root); return
             aliases = {field.lower(): field for field, _label in FIELDS.get(self.collection, [])}
@@ -134,7 +141,7 @@ class DataTransferMixin:
                 messagebox.showwarning("Tidak ada data", "Tidak ditemukan baris data untuk diimpor.", parent=self.root); return
             self._preview_import(records)
         except Exception as exc:
-            messagebox.showerror("Gagal membaca Excel", str(exc), parent=self.root)
+            messagebox.showerror("Gagal membaca Excel", present_error(exc), parent=self.root)
 
     def import_excel(self):
         if not self._can_write():
@@ -150,12 +157,12 @@ class DataTransferMixin:
     def _export_view_rows(self):
         if self.mode != "master" or self.collection in ("accounts", "history"):
             return self.filtered
-        result = self.use_cases.catalog_export(self.account, self.collection,
-                                               self.search_var.get().strip(), self._selected_filters())
+        result = self.use_cases.catalog_export(self.account, CatalogExportQuery(
+            self.collection, self.search_var.get().strip(), self._selected_filters()))
         original_catalog = self.catalog
-        self.catalog = {"collections": result["lookups"]}
+        self.catalog = {"collections": result.lookups}
         try:
-            return [(key, row, self._display_values(key, row)) for key, row in result["rows"].items()]
+            return [(key, row, self._display_values(key, row)) for key, row in result.rows.items()]
         finally:
             self.catalog = original_catalog
 
@@ -165,12 +172,13 @@ class DataTransferMixin:
         try:
             export_rows = self._export_view_rows()
             titles = self._column_titles()
-            self.use_cases.print_pdf(self.account, self.collection, path,
-                                     "DELIMOLD · %s" % TABS[self.collection], titles,
-                                     [values[:len(titles)] for _, _, values in export_rows])
+            rows = tuple(tuple(values[:len(titles)]) for _, _, values in export_rows)
+            self.use_cases.print_pdf(PdfExportRequest(
+                self.account, self.collection, path, "DELIMOLD · %s" % TABS[self.collection],
+                tuple(titles), rows))
             messagebox.showinfo("PDF selesai", "%s baris dicetak sesuai filter aktif." % len(export_rows), parent=self.root)
         except Exception as exc:
-            messagebox.showerror("Gagal membuat PDF", str(exc), parent=self.root)
+            messagebox.showerror("Gagal membuat PDF", present_error(exc), parent=self.root)
 
     def _save_template(self):
         path = filedialog.asksaveasfilename(parent=self.root, title="Simpan template DELIMOLD", defaultextension=".xlsx",
@@ -178,8 +186,9 @@ class DataTransferMixin:
                                             filetypes=(("Workbook Excel", "*.xlsx"),))
         if not path: return
         try:
-            self.use_cases.write_excel_template(self.account, self.collection, path,
-                                                 [label for _, label in FIELDS.get(self.collection, [])])
+            self.use_cases.write_excel_template(WorkbookTemplateRequest(
+                self.account, self.collection, path,
+                tuple(label for _, label in FIELDS.get(self.collection, []))))
             messagebox.showinfo("Template tersimpan", "Isi baris data di bawah judul kolom, lalu impor kembali.", parent=self.root)
         except Exception as exc:
-            messagebox.showerror("Gagal membuat template", str(exc), parent=self.root)
+            messagebox.showerror("Gagal membuat template", present_error(exc), parent=self.root)

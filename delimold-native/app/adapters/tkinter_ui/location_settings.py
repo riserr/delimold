@@ -1,11 +1,11 @@
 """Native, first-run location setup for the TENDERLOIN desktop app."""
-import os
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
 from uuid import uuid4
 
-from app.adapters.configuration import save_config
+from .shared_components import build_database_status
+from .error_presenter import present_error
 
 
 DARK = "#151d18"
@@ -79,13 +79,7 @@ def configure_master_paths(root, base, config, force=False):
         return config
 
     base = Path(base).resolve()
-    configured_database = config.get("database_path", "")
-    if configured_database:
-        default_database = Path(configured_database)
-        if not default_database.is_absolute():
-            default_database = base / default_database
-    else:
-        default_database = base.parent / "DATABASE" / "delimold.sqlite3"
+    default_database = Path(config["database_path"])
     default_publish = config.get("publish_path", "")
 
     root.title("DELIMOLD · Data Cetakan Ban")
@@ -222,25 +216,17 @@ def configure_master_paths(root, base, config, force=False):
             if not publish_var.get().strip():
                 raise ValueError("Pilih folder App bersama di SALAK terlebih dahulu.")
             publish = Path(publish_var.get().strip())
-            _writable_folder(publish)
 
-            stored_database = str(database)
-            try:
-                database.relative_to(base.parent.resolve())
-                stored_database = os.path.relpath(str(database), str(base))
-            except ValueError:
-                pass
             updated = dict(config)
-            updated.update({"mode": "master", "database_path": stored_database,
+            updated.update({"mode": "master", "database_path": str(database),
                             "publish_path": str(publish), "publish_on_start": True})
-            save_config(updated)
             result["config"] = updated
             done.set("Lokasi tersimpan. DELIMOLD sedang disiapkan…")
             for child in root.winfo_children():
                 child.destroy()
         except Exception as exc:
             error_label.configure(fg="#f1a79b")
-            done.set("Belum tersimpan: %s" % exc)
+            done.set("Belum tersimpan: %s" % present_error(exc))
 
     save_button = _RoundedButton(footer, "Simpan lokasi", save, primary=True)
     save_button.pack(side="right", padx=(12, 0))
@@ -248,3 +234,120 @@ def configure_master_paths(root, base, config, force=False):
     root.protocol("WM_DELETE_WINDOW", lambda: done.set("cancelled"))
     root.wait_variable(done)
     return result["config"]
+
+
+def build_location_settings(parent, base, config, on_saved, on_back):
+    """Render location settings inside the existing application content area."""
+    base = Path(base).resolve()
+    default_database = Path(config["database_path"])
+
+    page = tk.Frame(parent, bg=DARK)
+    page.pack(fill="both", expand=True, padx=20, pady=15)
+    tk.Label(page, text="PENGATURAN TENDERLOIN", bg=DARK, fg=MUTED,
+             font=("Segoe UI", 8)).pack(anchor="w")
+    tk.Label(page, text="Lokasi data DELIMOLD", bg=DARK, fg=TEXT,
+             font=("Segoe UI", 20)).pack(anchor="w", pady=(8, 3))
+    tk.Label(page, text="Atur database utama dan folder publikasi bersama.", bg=DARK, fg=MUTED,
+             font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 15))
+    build_database_status(page, "master")
+
+    card = tk.Frame(page, bg=CARD, highlightbackground=LINE, highlightthickness=1, padx=18, pady=16)
+    card.pack(fill="both", expand=True)
+    tk.Label(card, text="Database TENDERLOIN", bg=CARD, fg=TEXT,
+             font=("Segoe UI", 12, "bold")).pack(anchor="w")
+    tk.Label(card, text="Database aktif berada di komputer TENDERLOIN.", bg=CARD, fg=MUTED,
+             font=("Segoe UI", 9)).pack(anchor="w", pady=(7, 12))
+
+    database_row = tk.Frame(card, bg=CARD)
+    database_row.pack(fill="x")
+    tk.Label(database_row, text="File database", width=18, anchor="w", bg=CARD, fg=TEXT,
+             font=("Segoe UI", 9, "bold")).pack(side="left")
+    database_var = tk.StringVar(parent, str(default_database))
+    database_entry = tk.Entry(database_row, textvariable=database_var, bg=INPUT, fg=TEXT,
+                              insertbackground=TEXT, relief="flat", highlightthickness=1,
+                              highlightbackground=LINE, highlightcolor=GREEN,
+                              font=("Segoe UI", 9))
+    database_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=(0, 9))
+
+    def browse_database():
+        current = Path(database_var.get())
+        chosen = filedialog.asksaveasfilename(
+            parent=parent.winfo_toplevel(), title="Pilih file database lokal TENDERLOIN",
+            initialdir=str(current.parent if current.parent.exists() else base),
+            initialfile=current.name or "delimold.sqlite3", defaultextension=".sqlite3",
+            filetypes=(("Database DELIMOLD", "*.sqlite3"), ("Semua file", "*.*")))
+        if chosen:
+            database_var.set(chosen)
+
+    _RoundedButton(database_row, "Pilih…", browse_database).pack(side="right")
+    tk.Label(card, text="Jika lokasi berubah, database aktif disalin aman dan aplikasi langsung beralih ke file baru.",
+             bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", padx=(144, 0), pady=(7, 14))
+
+    tk.Frame(card, bg=LINE, height=1).pack(fill="x", pady=(0, 13))
+    tk.Label(card, text="Publikasi SALAK", bg=CARD, fg=TEXT,
+             font=("Segoe UI", 12, "bold")).pack(anchor="w")
+    tk.Label(card, text="Snapshot baca-saja akan ditulis ke folder bersama ini.", bg=CARD, fg=MUTED,
+             font=("Segoe UI", 9)).pack(anchor="w", pady=(7, 11))
+
+    publish_row = tk.Frame(card, bg=CARD)
+    publish_row.pack(fill="x")
+    tk.Label(publish_row, text="Folder tujuan", width=18, anchor="w", bg=CARD, fg=TEXT,
+             font=("Segoe UI", 9, "bold")).pack(side="left")
+    publish_var = tk.StringVar(parent, config.get("publish_path", ""))
+    publish_entry = tk.Entry(publish_row, textvariable=publish_var, bg=INPUT, fg=TEXT,
+                             insertbackground=TEXT, relief="flat", highlightthickness=1,
+                             highlightbackground=LINE, highlightcolor=GREEN,
+                             font=("Segoe UI", 9))
+    publish_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=(0, 9))
+
+    def browse_publish():
+        selected = filedialog.askdirectory(parent=parent.winfo_toplevel(),
+                                           title="Pilih folder App bersama di SALAK", mustexist=True)
+        if selected:
+            selected_path = Path(selected)
+            target = selected_path if selected_path.name.lower() == "published-python" else selected_path / "published-python"
+            publish_var.set(str(target))
+
+    _RoundedButton(publish_row, "Cari di SALAK…", browse_publish).pack(side="right")
+    tk.Label(card, text="Jika memilih folder App, subfolder published-python dibuat otomatis.",
+             bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", padx=(144, 0), pady=(7, 12))
+
+    footer = tk.Frame(card, bg=CARD)
+    footer.pack(fill="x", side="bottom", pady=(10, 0))
+    tk.Frame(footer, bg=LINE, height=1).pack(fill="x", pady=(0, 11))
+    status = tk.Label(footer, text="", bg=CARD, fg=GREEN, font=("Segoe UI", 8), anchor="w")
+    status.pack(side="left", fill="x", expand=True)
+    page.status_label = status
+
+    def save():
+        previous_config = dict(config)
+        try:
+            database = Path(database_var.get().strip()).expanduser()
+            if not database.is_absolute():
+                database = (base / database).resolve()
+            else:
+                database = database.resolve()
+            if str(database).startswith(("\\\\", "//")):
+                raise ValueError("Database harus berada di disk lokal TENDERLOIN.")
+            if database.exists() and database.is_dir():
+                raise ValueError("Pilih nama file database, bukan folder.")
+            _writable_folder(database.parent)
+            if not publish_var.get().strip():
+                raise ValueError("Pilih folder publikasi di SALAK terlebih dahulu.")
+            publish = Path(publish_var.get().strip()).expanduser()
+
+            updated = dict(config)
+            updated.update({"mode": "master", "database_path": str(database),
+                            "publish_path": str(publish), "publish_on_start": True})
+            publish_warning = on_saved(previous_config, updated, database)
+            config.update(updated)
+            if publish_warning:
+                status.configure(fg="#f1c27d", text="Lokasi dan database tersimpan; publikasi SALAK tertunda dan akan dicoba lagi otomatis. %s" % publish_warning)
+            else:
+                status.configure(fg=GREEN, text="Lokasi tersimpan, database aktif, dan snapshot SALAK berhasil diperbarui.")
+        except Exception as exc:
+            status.configure(fg="#f1a79b", text="Belum tersimpan: %s" % present_error(exc))
+
+    _RoundedButton(footer, "Kembali ke data", on_back).pack(side="right", padx=(0, 9))
+    _RoundedButton(footer, "Simpan lokasi", save, primary=True).pack(side="right", padx=(9, 0))
+    return page

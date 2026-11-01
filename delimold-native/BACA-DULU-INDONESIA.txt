@@ -2,6 +2,9 @@ DELIMOLD Native Python — TENDERLOIN
 
 Tidak perlu memasang Python, browser, atau aplikasi tambahan.
 
+PERSYARATAN WINDOWS 7
+Untuk Windows 7 32-bit, gunakan Windows 7 SP1 dan pastikan pembaruan KB2533623 sudah terpasang. Paket menyertakan runtime Universal C Runtime x86.
+
 CARA MENJALANKAN
 1. Ekstrak folder TENDERLOIN ke komputer TENDERLOIN dan pertahankan susunan foldernya.
 2. Klik ganda TENDERLOIN\APLIKASI\DELIMOLD.exe.
@@ -9,10 +12,10 @@ CARA MENJALANKAN
    - Subfolder APLIKASI\RUNTIME berisi runtime Python portable.
    - Folder TENDERLOIN\DATABASE menyimpan database akun dan seluruh data aplikasi.
    - Jangan menghapus folder DATABASE saat memperbarui folder APLIKASI.
-3. Saat pertama dibuka, pilih lokasi database dan folder publikasi di SALAK.
-4. Program membuat subfolder published-python di folder SALAK yang dipilih.
-5. Jika database masih kosong, katalog checkpoint v12 dimuat otomatis dan program meminta pembuatan akun Supervisor pertama.
-6. Untuk mengubah lokasi setelah itu, buka menu Atur lokasi data di sidebar sebagai Supervisor.
+3. Jika database belum ada, program membuat skema awal di TENDERLOIN\DATABASE\delimold.sqlite3.
+4. Buat akun Supervisor pertama dan masuk. Setelah itu, katalog awal dimuat ke database.
+5. Atur folder publikasi di SALAK melalui menu Atur lokasi data di sidebar sebagai Supervisor.
+6. Program membuat subfolder published-python di folder SALAK yang dipilih.
 
 Database utama dibuat di TENDERLOIN\DATABASE\delimold.sqlite3. Database lama dari %LOCALAPPDATA%\DELIMOLD\delimold.sqlite3 akan disalin otomatis saat pembaruan pertama. File lama tidak dihapus. Buat cadangan database secara berkala dan jangan hapus folder DATABASE saat memperbarui aplikasi.
 
@@ -23,4 +26,3 @@ Jika aplikasi gagal mulai, periksa %LOCALAPPDATA%\DELIMOLD\startup.log.
 Paket ini berfokus pada pembukaan aplikasi utama di TENDERLOIN. Tidak ada file BAT di dalam paket. Mode Engineer akan disiapkan setelah aplikasi utama berhasil dibuka.
 
 Seed checkpoint berisi 869 cetakan, 108 container, dan 89 pattern; seed tidak berisi akun lama, project aktif, atau pembelian live.
-

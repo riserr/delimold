@@ -8,12 +8,15 @@ from tkinter import messagebox
 
 from app.adapters.salak_publisher import JsonSnapshotPublisher, JsonSnapshotReader
 from app.adapters.seed_catalog_reader import JsonSeedCatalogReader
-from app.adapters.configuration import load_config, local_data_directory, resolve_path, save_config
+from app.adapters.configuration import (JsonConfigurationStore, load_config,
+                                        default_database_path, legacy_database_path,
+                                        local_data_directory, resolve_path, resolve_seed_path,
+                                        save_config)
 from app.adapters.excel_adapter import OpenpyxlWorkbookAdapter
 from app.adapters.pdf_adapter import ReportLabPdfAdapter
 from app.adapters.sqlite_repository import SQLiteCatalogRepository
 from app.adapters.tkinter_ui.app_window import NativeApp
-from app.adapters.tkinter_ui.location_settings import configure_master_paths
+from app.adapters.tkinter_ui.error_presenter import present_error
 from app.application.use_cases import DelimoldUseCases
 
 
@@ -48,20 +51,11 @@ def main():
             raise ValueError("Mode yang didukung adalah master atau viewer.")
         root = tk.Tk()
         root.withdraw()
-        if config["mode"] == "master" and not config.get("publish_path"):
-            root.title("DELIMOLD · Pengaturan lokasi")
-            root.geometry("1x1+0+0")
-            root.deiconify()
-            root.update_idletasks()
-            configured = configure_master_paths(root, base, config)
-            if not configured:
-                root.destroy()
-                return 0
-            config = configured
-            root.withdraw()
 
         repository = None
         use_cases = None
+        seed_path = None
+        app = None
         try:
             publisher = JsonSnapshotPublisher()
             reader = JsonSnapshotReader()
@@ -70,39 +64,43 @@ def main():
             pdf_exporter = ReportLabPdfAdapter()
             if config["mode"] == "master":
                 database_path = resolve_path(base, config["database_path"])
-                package_database = (base.parent / "DATABASE" / "delimold.sqlite3").resolve()
-                legacy_database = (local_data_directory() / "delimold.sqlite3").resolve()
-                if database_path and database_path.resolve() == legacy_database and legacy_database.is_file():
+                package_database = default_database_path(base).resolve()
+                old_database = legacy_database_path().resolve()
+                if database_path and database_path.resolve() == old_database and old_database.is_file():
                     if not package_database.exists():
-                        SQLiteCatalogRepository.migrate_database(legacy_database, package_database)
+                        SQLiteCatalogRepository.migrate_database(old_database, package_database)
                     if package_database.exists():
-                        config["database_path"] = "../DATABASE/delimold.sqlite3"
-                        save_config(config)
+                        config["database_path"] = str(package_database)
+                        save_config(config, base)
                         database_path = package_database
                 repository = SQLiteCatalogRepository(database_path)
-                seed_path = resolve_path(base, config.get("seed_path", "seed/catalog.json"))
-                if seed_path and not seed_path.is_file():
-                    source_seed = base / "app" / "data" / "seed" / "catalog.json"
-                    seed_path = source_seed if source_seed.is_file() else seed_path
+                seed_path = resolve_seed_path(base, config.get("seed_path"))
                 use_cases = DelimoldUseCases(repository, publisher, reader,
                                              resolve_path(base, config.get("publish_path", "")),
-                                             workbook, pdf_exporter, seed_reader)
+                                             workbook, pdf_exporter, seed_reader,
+                                             JsonConfigurationStore(base))
+            else:
+                use_cases = DelimoldUseCases(None, publisher, reader, workbook=workbook,
+                                             pdf_exporter=pdf_exporter,
+                                             configuration_store=JsonConfigurationStore(base))
+                snapshot_path = resolve_path(base, config.get("snapshot_path", "published/catalog.json"))
+                config["snapshot_path"] = str(snapshot_path)
+            root.deiconify()
+            app = NativeApp(root, config, use_cases=use_cases, base_dir=base)
+            # On a fresh install the repository constructor creates only the
+            # SQLite schema. Let the first Supervisor account be created and
+            # authenticated before importing the starter catalog.
+            if config["mode"] == "master" and app.account is not None and root.winfo_exists():
                 if seed_path and seed_path.is_file():
                     use_cases.initialize_catalog_if_empty(seed_path)
+                    app.refresh()
                 if config.get("publish_on_start", True) and config.get("publish_path"):
                     try:
                         use_cases.publish_pending(force=True)
                     except Exception as exc:
                         messagebox.showwarning("Publikasi SALAK belum siap",
-                                               "Data utama tetap dapat dipakai. Snapshot SALAK belum diperbarui.\n\n%s" % exc,
+                                               "Data lokal tetap dapat dipakai. Publikasi SALAK tertunda dan akan dicoba lagi otomatis.\n\n%s" % present_error(exc),
                                                parent=root)
-            else:
-                use_cases = DelimoldUseCases(None, publisher, reader, workbook=workbook,
-                                             pdf_exporter=pdf_exporter)
-                snapshot_path = resolve_path(base, config.get("snapshot_path", "published/catalog.json"))
-                config["snapshot_path"] = str(snapshot_path)
-            root.deiconify()
-            NativeApp(root, config, use_cases=use_cases, base_dir=base)
             root.mainloop()
         except Exception:
             if use_cases:
@@ -117,7 +115,8 @@ def main():
     except Exception as exc:
         path = log_error(exc)
         try:
-            messagebox.showerror("DELIMOLD tidak dapat dimulai", "%s\n\nLog: %s" % (exc, path))
+            messagebox.showerror("DELIMOLD tidak dapat dimulai",
+                                 "%s\n\nLog: %s" % (present_error(exc), path))
         except Exception:
             pass
         return 1

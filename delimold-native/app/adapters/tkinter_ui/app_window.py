@@ -1,19 +1,18 @@
 """Native Tk desktop UI. This module never opens or embeds a browser."""
-import socket
+import threading
 import tkinter as tk
 import tkinter.font as tkfont
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
 from pathlib import Path
-from uuid import uuid4
 
-from app.domain.models import Actor
-from .location_settings import configure_master_paths
-from .app_window_theme import CARD, DARK, FIELD, GREEN, INK, LINE, MUTED, PALE, WHITE
+from .app_window_theme import CARD, DARK, FIELD, GREEN, INK, LINE, MUTED, WHITE
 from .shared_components import build_database_status, build_header, build_sidebar
-from .catalog_config import TABS
 from .catalog_screen import CatalogScreenMixin
 from .record_forms import RecordFormsMixin
 from .data_transfer import DataTransferMixin
+from .authentication import AuthenticationMixin
+from .navigation import NavigationMixin
+from .record_actions import RecordActionsMixin
 
 
 class RoundedToolbarButton(tk.Canvas):
@@ -64,7 +63,8 @@ class RoundedToolbarButton(tk.Canvas):
 
 
 
-class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
+class NativeApp(AuthenticationMixin, NavigationMixin, RecordActionsMixin,
+                CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
     def __init__(self, root, config, use_cases, base_dir=None):
         self.root = root
         self.config = config
@@ -85,6 +85,9 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         self._page_stats = None
         self.filter_query_maps = {}
         self._search_after_id = None
+        self._publish_retry_active = False
+        self._closing = False
+        self.location_status_label = None
         self.status_text = tk.StringVar(value="Memuat data…")
         self._style()
         self.root.title("DELIMOLD · Data Cetakan Ban")
@@ -119,79 +122,8 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         style.map("TButton", background=[("active", "#29392f"), ("pressed", "#29392f")], foreground=[("disabled", MUTED)])
         style.configure("Vertical.TScrollbar", background=WHITE, troughcolor=DARK, bordercolor=LINE, arrowcolor=MUTED)
 
-    def _login(self):
-        if self.mode == "viewer":
-            self.account = Actor("viewer", "Viewer SALAK", "VIEWER")
-            return
-        if self.use_cases.needs_initial_setup():
-            self._setup_supervisor()
-        if self.root.winfo_exists():
-            self._local_login()
 
-    def _setup_supervisor(self):
-        dlg = tk.Toplevel(self.root)
-        dlg.title("Setup Supervisor · DELIMOLD")
-        dlg.resizable(False, False)
-        dlg.transient(self.root)
-        dlg.grab_set()
-        box = ttk.Frame(dlg, padding=22)
-        box.pack(fill="both", expand=True)
-        ttk.Label(box, text="Buat akun Supervisor", font=("Segoe UI", 15, "bold"), foreground=INK).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
-        ttk.Label(box, text="Akun pertama disimpan pada database lokal.", foreground=MUTED).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 14))
-        fields = {}
-        for row, label in enumerate(("Nama akun", "Nama tampilan", "Password (4–12 karakter)", "Ulangi password"), 2):
-            ttk.Label(box, text=label).grid(row=row, column=0, sticky="w", padx=(0, 12), pady=5)
-            entry = ttk.Entry(box, width=34, show="•" if "Password" in label or "Ulangi" in label else "")
-            entry.grid(row=row, column=1, sticky="ew", pady=5)
-            fields[label] = entry
-        error = tk.StringVar()
-        ttk.Label(box, textvariable=error, foreground="#a34739").grid(row=6, column=0, columnspan=2, sticky="w", pady=5)
-        def submit():
-            username = fields["Nama akun"].get().strip()
-            display = fields["Nama tampilan"].get().strip()
-            pw = fields["Password (4–12 karakter)"].get()
-            again = fields["Ulangi password"].get()
-            try:
-                if pw != again:
-                    raise ValueError("Password belum sama")
-                self.use_cases.setup_initial_supervisor(username, display, pw)
-                dlg.destroy()
-            except Exception as exc:
-                error.set(str(exc))
-        ttk.Button(box, text="Buat akun", command=submit).grid(row=7, column=1, sticky="e", pady=(9, 0))
-        dlg.protocol("WM_DELETE_WINDOW", self.root.destroy)
-        dlg.wait_window()
 
-    def _local_login(self):
-        dlg = tk.Toplevel(self.root)
-        dlg.title("Login DELIMOLD")
-        dlg.resizable(False, False)
-        dlg.transient(self.root)
-        dlg.grab_set()
-        box = ttk.Frame(dlg, padding=22)
-        box.pack(fill="both", expand=True)
-        ttk.Label(box, text="DELI MOLD", font=("Segoe UI", 17, "bold"), foreground=GREEN).grid(row=0, column=0, columnspan=2, sticky="w")
-        ttk.Label(box, text="Masuk ke data utama TENDERLOIN", foreground=MUTED).grid(row=1, column=0, columnspan=2, sticky="w", pady=(3, 16))
-        ttk.Label(box, text="Nama akun").grid(row=2, column=0, sticky="w", padx=(0, 12), pady=5)
-        username = ttk.Entry(box, width=32)
-        username.grid(row=2, column=1, pady=5)
-        ttk.Label(box, text="Password").grid(row=3, column=0, sticky="w", padx=(0, 12), pady=5)
-        password = ttk.Entry(box, width=32, show="•")
-        password.grid(row=3, column=1, pady=5)
-        error = tk.StringVar()
-        ttk.Label(box, textvariable=error, foreground="#a34739").grid(row=4, column=0, columnspan=2, sticky="w", pady=5)
-        def submit(event=None):
-            try:
-                self.account = self.use_cases.authenticate(username.get(), password.get(), socket.gethostname())
-                dlg.destroy()
-            except Exception as exc:
-                error.set(str(exc))
-                password.delete(0, "end")
-                password.focus_set()
-        ttk.Button(box, text="Masuk", command=submit).grid(row=5, column=1, sticky="e", pady=(8, 0))
-        password.bind("<Return>", submit)
-        dlg.protocol("WM_DELETE_WINDOW", self.root.destroy)
-        dlg.wait_window()
 
     def _build(self):
         self.root.title("DELIMOLD · Data Cetakan Ban")
@@ -203,7 +135,14 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         self.main = tk.Frame(shell, bg=DARK)
         self.main.pack(side="left", fill="both", expand=True)
         self.header, self.crumb_label = build_header(self.main, self.account.role, self.mode)
-        content = tk.Frame(self.main, bg=DARK)
+        self.content_host = tk.Frame(self.main, bg=DARK)
+        self.content_host.pack(fill="both", expand=True)
+        self._show_catalog_page()
+
+
+
+    def _render_catalog_content(self):
+        content = tk.Frame(self.content_host, bg=DARK)
         content.pack(fill="both", expand=True, padx=20, pady=15)
         tk.Label(content, text="MOLD MANAGEMENT   ·   DESKTOP PORTABLE", bg=DARK, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
         self.title_label = tk.Label(content, text="Data Cetakan", bg=DARK, fg=INK, font=("Segoe UI", 20, "normal"))
@@ -264,40 +203,18 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         self.page_label.pack(side="right", padx=6)
         self.previous_page_button = ttk.Button(actions_bottom, text="‹ Sebelumnya", command=self.previous_page)
         self.previous_page_button.pack(side="right", padx=(0, 6))
-        self._auto_refresh_id = self.root.after(120000, self.auto_refresh)
+        self._schedule_auto_refresh()
 
-    def configure_locations(self):
-        # Render the settings page in the existing application window.
-        # Stop the old page's timer while its widgets are temporarily removed.
-        main_geometry = self.root.geometry()
-        if getattr(self, "_auto_refresh_id", None):
+    def _schedule_auto_refresh(self):
+        scheduled = getattr(self, "_auto_refresh_id", None)
+        if scheduled:
             try:
-                self.root.after_cancel(self._auto_refresh_id)
+                self.root.after_cancel(scheduled)
             except tk.TclError:
                 pass
-            self._auto_refresh_id = None
-        for child in self.root.winfo_children():
-            child.destroy()
-        updated = None
-        try:
-            updated = configure_master_paths(self.root, self.base_dir, dict(self.config), force=True)
-            if updated:
-                self.config.update(updated)
-                publish_path = Path(updated["publish_path"])
-                self.use_cases.set_publish_path(publish_path)
-                self.use_cases.publish_pending(force=True)
-                messagebox.showinfo("Lokasi tersimpan",
-                                    "Lokasi publikasi SALAK sudah aktif. Perubahan lokasi database berlaku setelah DELIMOLD dibuka kembali.",
-                                    parent=self.root)
-        except Exception as exc:
-            messagebox.showerror("Pengaturan lokasi", str(exc), parent=self.root)
-        finally:
-            if self.root.winfo_exists():
-                self.root.minsize(980, 620)
-                self.root.geometry(main_geometry)
-                self.root.protocol("WM_DELETE_WINDOW", self.close)
-                self._build()
-                self.refresh()
+        if not self._closing:
+            self._auto_refresh_id = self.root.after(120000, self.auto_refresh)
+
 
     def _action_button(self, text, command, primary=False):
         if self.mode == "viewer" or (self.account and self.account.role == "VIEWER"):
@@ -319,21 +236,6 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
         self.readonly_label.pack(side="right", padx=9)
 
 
-    def select_collection(self, collection):
-        self.collection = collection
-        self.page_index = 0
-        self._page_stats = None
-        for key, button in self.nav_buttons.items():
-            button.configure(bg=PALE if key == collection else WHITE, fg=INK if key == collection else MUTED)
-        self.title_label.configure(text=TABS[collection])
-        self.crumb_label.configure(text="DELIMOLD · " + TABS[collection])
-        self.list_label.configure(text="Daftar " + TABS[collection].lower())
-        for button in getattr(self, "row_action_buttons", []):
-            disabled = collection == "history" or (button is getattr(self, "toggle_button", None) and collection == "purchases")
-            button.configure(state="disabled" if disabled else "normal")
-        self._update_toolbar()
-        self._build_filters()
-        self.refresh()
 
 
 
@@ -355,93 +257,14 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
 
 
 
-    def add_record(self):
-        if self.collection == "accounts":
-            self._account_form(None, None)
-            return
-        self._record_form(None, None)
-
-    def edit_record(self):
-        selected = self._selected()
-        if selected:
-            if self.collection == "accounts":
-                self._account_form(selected[0], selected[1])
-            elif self.collection != "history":
-                self._record_form(selected[0], selected[1])
 
 
 
-    def toggle_status(self):
-        selected = self._selected()
-        if not selected or not self._can_write():
-            return
-        key, row = selected
-        if self.collection == "accounts":
-            enabled = not bool(row.get("enabled"))
-            try:
-                self.use_cases.set_user_enabled(self.account, key, enabled)
-                self.refresh()
-            except Exception as exc:
-                messagebox.showerror("Status akun gagal diubah", str(exc), parent=self.root)
-            return
-        current = str(row.get("status", "active")).lower()
-        new_status = "inactive" if current in ("active", "aktif") else "active"
-        reason = simpledialog.askstring("Alasan perubahan status", "Masukkan alasan %s:" % ("menonaktifkan" if new_status == "inactive" else "mengaktifkan"), parent=self.root)
-        if reason is None:
-            return
-        if not reason.strip():
-            messagebox.showwarning("Alasan wajib", "Masukkan alasan perubahan status.", parent=self.root)
-            return
-        value = dict(row); value["status"] = new_status; value["statusReason"] = reason.strip()
-        self._save(value, key, "status", reason.strip())
 
-    def delete_record(self):
-        selected = self._selected()
-        if not selected or self.account.role != "SUPERVISOR":
-            return
-        key, row = selected
-        if self.collection == "accounts":
-            if key == self.account.username:
-                messagebox.showwarning("Tidak dapat menghapus", "Akun yang sedang dipakai tidak dapat dihapus.", parent=self.root); return
-            if not messagebox.askyesno("Hapus akun", "Hapus akun %s?" % key, parent=self.root): return
-            try:
-                self.use_cases.delete_user(self.account, key)
-                self.refresh()
-            except Exception as exc:
-                messagebox.showerror("Akun gagal dihapus", str(exc), parent=self.root)
-            return
-        if not messagebox.askyesno("Konfirmasi hapus", "Hapus data ini? Tindakan ini dicatat di riwayat.", parent=self.root):
-            return
-        try:
-            self.use_cases.delete_record(self.account, self.collection, key, "hapus oleh Supervisor")
-            self.refresh()
-        except Exception as exc:
-            messagebox.showerror("Data gagal dihapus", str(exc), parent=self.root)
 
-    def _save(self, value, key, action, reason=""):
-        try:
-            self.use_cases.save_record(self.account, self.collection, key, value, action, reason)
-            self.refresh()
-        except Exception as exc:
-            messagebox.showerror("Gagal menyimpan", str(exc), parent=self.root)
 
-    def _new_record_key(self, value):
-        if self.collection == "patterns" and value.get("code"):
-            return str(value["code"])
-        if self.collection == "containers" and value.get("code"):
-            return "%s-%s" % (value.get("code"), value.get("serial", "01"))
-        return "%s_%s" % (self.collection[:1], uuid4().hex[:20])
 
-    def _can_write(self):
-        if self.mode == "viewer" or self.account.role == "VIEWER":
-            messagebox.showinfo("Baca-saja", "Akun ini hanya dapat melihat data.", parent=self.root)
-            return False
-        if self.collection == "purchases" and self.account.role != "SUPERVISOR":
-            messagebox.showinfo("Akses terbatas", "Data pembelian hanya dapat diakses Supervisor.", parent=self.root)
-            return False
-        if self.collection == "history":
-            return False
-        return True
+
 
 
 
@@ -452,12 +275,47 @@ class NativeApp(CatalogScreenMixin, RecordFormsMixin, DataTransferMixin):
 
 
     def auto_refresh(self):
-        if self.root.winfo_exists():
+        if not self._closing and self.root.winfo_exists():
             if self.mode == "viewer":
-                self.refresh()
-            self._auto_refresh_id = self.root.after(120000, self.auto_refresh)
+                if getattr(self, "current_view", "catalog") == "catalog":
+                    self.refresh()
+            else:
+                self._retry_pending_publication()
+            self._schedule_auto_refresh()
+
+    def _retry_pending_publication(self):
+        if self._publish_retry_active or self._closing:
+            return
+        self._publish_retry_active = True
+
+        def publish():
+            published = False
+            try:
+                published = self.use_cases.publish_pending()
+            except Exception:
+                # The revision remains pending in SQLite and will be retried
+                # at the next scheduled pass.
+                pass
+            try:
+                self.root.after(0, lambda: self._publication_retry_finished(published))
+            except tk.TclError:
+                pass
+
+        threading.Thread(target=publish, name="DELIMOLD-SALAK-retry", daemon=True).start()
+
+    def _publication_retry_finished(self, published):
+        self._publish_retry_active = False
+        if self._closing:
+            return
+        if published and self.location_status_label is not None:
+            try:
+                self.location_status_label.configure(
+                    fg=GREEN, text="Snapshot SALAK berhasil diperbarui otomatis.")
+            except tk.TclError:
+                self.location_status_label = None
 
     def close(self):
+        self._closing = True
         try:
             if self.mode == "master":
                 self.use_cases.close()
