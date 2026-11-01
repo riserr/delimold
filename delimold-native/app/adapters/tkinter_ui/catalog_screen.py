@@ -101,7 +101,8 @@ class CatalogScreenMixin:
     def refresh(self):
         try:
             if self.mode == "master" and self.collection not in ("accounts", "history"):
-                limit = int(self.page_var.get() or "50")
+                page_size = str(self.page_var.get() or "50")
+                limit = 2147483647 if page_size == "Semua" else int(page_size)
                 offset = self.page_index * limit
                 page_data = self.use_cases.catalog_page(self.account, CatalogPageQuery(
                     self.collection, offset, limit,
@@ -209,7 +210,7 @@ class CatalogScreenMixin:
         self.tree.configure(columns=columns)
         for col, title in zip(columns, self._column_titles()):
             self.tree.heading(col, text=title)
-            self.tree.column(col, width=120, minwidth=75, stretch=True, anchor="w")
+            self.tree.column(col, width=150, minwidth=110, stretch=False, anchor="w")
         self.tree.delete(*self.tree.get_children())
         for key, row, values in page:
             self.tree.insert("", "end", iid=str(key), values=values)
