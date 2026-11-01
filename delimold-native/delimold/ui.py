@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 18600)
+Total output lines: 1211
+
 """Native Tk desktop UI. This module never opens or embeds a browser."""
 import json
 import re
@@ -13,12 +16,15 @@ from .auth import create_user, verify_user
 from .paths import configure_master_paths
 
 
-GREEN = "#28684b"
-PALE = "#eaf2e5"
-INK = "#405a44"
-MUTED = "#82907c"
-LINE = "#e2e9df"
-WHITE = "#ffffff"
+GREEN = "#55ad7e"
+PALE = "#2b3b30"
+INK = "#edf3eb"
+MUTED = "#b3c2ad"
+LINE = "#37483c"
+WHITE = "#1d2922"
+DARK = "#151d18"
+CARD = "#202d25"
+FIELD = "#18221c"
 
 
 class RoundedToolbarButton(tk.Canvas):
@@ -28,10 +34,10 @@ class RoundedToolbarButton(tk.Canvas):
         self.command = command
         self.primary = primary
         self.font = tkfont.Font(parent, family="Segoe UI", size=8)
-        self.label_color = WHITE if primary else "#294436"
-        self.normal_fill = "#25684d" if primary else WHITE
-        self.hover_fill = self.normal_fill if primary else "#f7f9f5"
-        self.border = self.normal_fill if primary else "#dce5d3"
+        self.label_color = "#102017" if primary else INK
+        self.normal_fill = GREEN if primary else WHITE
+        self.hover_fill = self.normal_fill if primary else "#29392f"
+        self.border = self.normal_fill if primary else LINE
         self.width = self.font.measure(text) + 26
         self.height = self.font.metrics("linespace") + 16
         super().__init__(parent, width=self.width, height=self.height, bd=0, highlightthickness=0,
@@ -137,7 +143,7 @@ class NativeApp:
         self.root.title("DELIMOLD · Data Cetakan Ban")
         self.root.geometry("1280x800")
         self.root.minsize(980, 620)
-        self.root.configure(bg="#f2f5ef")
+        self.root.configure(bg=DARK)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self._login()
         if self.account is None and self.mode != "viewer":
@@ -152,14 +158,19 @@ class NativeApp:
             style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure("Treeview", background=WHITE, fieldbackground=WHITE, foreground=INK,
+        style.configure("Treeview", background=CARD, fieldbackground=CARD, foreground=INK,
                         rowheight=29, bordercolor=LINE, font=("Segoe UI", 9))
-        style.configure("Treeview.Heading", background="#f7f9f5", foreground="#7f8e78",
+        style.configure("Treeview.Heading", background=WHITE, foreground=MUTED,
                         font=("Segoe UI", 8, "bold"), relief="flat", padding=(7, 8))
-        style.map("Treeview", background=[("selected", PALE)], foreground=[("selected", INK)])
-        style.configure("TCombobox", padding=6, fieldbackground=WHITE, foreground=INK)
-        style.configure("TEntry", padding=7)
-        style.configure("Vertical.TScrollbar", background="#e7eee4", troughcolor="#f8faf6")
+        style.map("Treeview", background=[("selected", "#355640")] , foreground=[("selected", INK)])
+        style.configure("TCombobox", padding=6, fieldbackground=FIELD, background=WHITE, foreground=INK, arrowcolor=INK, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE)
+        style.map("TCombobox", fieldbackground=[("readonly", FIELD)], foreground=[("readonly", INK)], selectbackground=[("readonly", FIELD)], selectforeground=[("readonly", INK)])
+        style.configure("TEntry", padding=7, fieldbackground=FIELD, foreground=INK, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE)
+        style.configure("TFrame", background=WHITE)
+        style.configure("TLabel", background=WHITE, foreground=INK)
+        style.configure("TButton", background=WHITE, foreground=INK, bordercolor=LINE, padding=(9, 5))
+        style.map("TButton", background=[("active", "#29392f"), ("pressed", "#29392f")], foreground=[("disabled", MUTED)])
+        style.configure("Vertical.TScrollbar", background=WHITE, troughcolor=DARK, bordercolor=LINE, arrowcolor=MUTED)
 
     def _login(self):
         if self.mode == "viewer":
@@ -268,16 +279,16 @@ class NativeApp:
 
     def _build(self):
         self.root.title("DELIMOLD · Data Cetakan Ban")
-        shell = tk.Frame(self.root, bg="#f2f5ef")
+        shell = tk.Frame(self.root, bg=DARK)
         shell.pack(fill="both", expand=True)
         self.sidebar = tk.Frame(shell, bg=WHITE, width=205, highlightbackground=LINE, highlightthickness=1)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
         brand = tk.Frame(self.sidebar, bg=WHITE)
         brand.pack(fill="x", padx=14, pady=(19, 16))
-        tk.Label(brand, text="M", bg=GREEN, fg=WHITE, font=("Georgia", 18), width=2, height=1).pack(side="left", padx=(0, 8))
+        tk.Label(brand, text="M", bg=GREEN, fg="#102017", font=("Georgia", 18), width=2, height=1).pack(side="left", padx=(0, 8))
         tk.Label(brand, text="DELIMOLD\nDATA CETAKAN BAN", bg=WHITE, fg=INK, justify="left", font=("Segoe UI", 10, "bold")).pack(side="left")
-        tk.Label(self.sidebar, text="WORKSPACE     LAN", bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack(fill="x", padx=17, pady=(0, 8))
+        tk.Label(self.sidebar, text="", bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack_forget()
         self.nav_buttons = {}
         visible_tabs = ["molds", "containers", "patterns", "stickers"]
         role = self.account.get("role")
@@ -302,45 +313,46 @@ class NativeApp:
                                          command=self.configure_locations)
             settings_button.pack(fill="x", padx=8, pady=2)
         tk.Frame(self.sidebar, bg=WHITE).pack(fill="both", expand=True)
-        tk.Label(self.sidebar, text="Satu sumber data.\nHak akses mengikuti peran.", bg="#f6f8f4", fg=MUTED,
+        tk.Label(self.sidebar, text="Satu sumber data.\nHak akses mengikuti peran.", bg=CARD, fg=MUTED,
                  justify="left", font=("Segoe UI", 8), padx=10, pady=10).pack(fill="x", padx=11, pady=9)
-        self.main = tk.Frame(shell, bg="#f2f5ef")
+        self.main = tk.Frame(shell, bg=DARK)
         self.main.pack(side="left", fill="both", expand=True)
         top = tk.Frame(self.main, bg=WHITE, height=46, highlightbackground=LINE, highlightthickness=1)
         top.pack(fill="x"); top.pack_propagate(False)
-        self.crumb_label = tk.Label(top, text="Workspace   ›   Data Cetakan", bg=WHITE, fg=MUTED, font=("Segoe UI", 9))
+        self.crumb_label = tk.Label(top, text="DELIMOLD · Data Cetakan Ban", bg=WHITE, fg=INK, font=("Segoe UI", 9))
         self.crumb_label.pack(side="left", padx=17)
         userlabel = "%s · %s" % (self.account.get("display_name", "Viewer"), self.account.get("role", "VIEWER"))
-        tk.Label(top, text="▣ LAN lokal     %s     %s" % (socket.gethostname(), userlabel), bg=WHITE, fg="#6a8065", font=("Segoe UI", 8)).pack(side="right", padx=14)
-        content = tk.Frame(self.main, bg="#f2f5ef")
+        right_label = "TENDERLOIN  ·  %s" % self.account.get("role", "VIEWER") if self.mode != "viewer" else "SALAK  ·  Viewer"
+        tk.Label(top, text=right_label, bg=WHITE, fg=INK, font=("Segoe UI", 8)).pack(side="right", padx=14)
+        content = tk.Frame(self.main, bg=DARK)
         content.pack(fill="both", expand=True, padx=20, pady=15)
-        tk.Label(content, text="MOLD MANAGEMENT   ·   DESKTOP PORTABLE", bg="#f2f5ef", fg="#92a187", font=("Segoe UI", 8)).pack(anchor="w")
-        self.title_label = tk.Label(content, text="Data Cetakan", bg="#f2f5ef", fg="#365b40", font=("Segoe UI", 20, "normal"))
+        tk.Label(content, text="MOLD MANAGEMENT   ·   DESKTOP PORTABLE", bg=DARK, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
+        self.title_label = tk.Label(content, text="Data Cetakan", bg=DARK, fg=INK, font=("Segoe UI", 20, "normal"))
         self.title_label.pack(anchor="w", pady=(3, 1))
-        tk.Label(content, text="Kelola dan telusuri data cetakan dalam satu tempat.", bg="#f2f5ef", fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w")
+        tk.Label(content, text="Kelola dan telusuri data cetakan dalam satu tempat.", bg=DARK, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w")
         conn = tk.Frame(content, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
         conn.pack(fill="x", pady=(13, 12))
-        tk.Label(conn, text="●", bg=WHITE, fg="#63a16a", font=("Segoe UI", 12)).pack(side="left", padx=(12, 6), pady=9)
+        tk.Label(conn, text="●", bg=WHITE, fg=GREEN, font=("Segoe UI", 12)).pack(side="left", padx=(12, 6), pady=9)
         connection_text = "Salinan baca-saja · publikasi SALAK" if self.mode == "viewer" else ("Data utama · TENDERLOIN" if self.mode == "master" else "Terhubung · TENDERLOIN")
-        self.connection_label = tk.Label(conn, text=connection_text, bg=WHITE, fg="#51704f", font=("Segoe UI", 9, "bold"))
+        self.connection_label = tk.Label(conn, text=connection_text, bg=WHITE, fg=GREEN, font=("Segoe UI", 9, "bold"))
         self.connection_label.pack(side="left", pady=9)
-        self.stats_frame = tk.Frame(content, bg="#f2f5ef")
+        self.stats_frame = tk.Frame(content, bg=DARK)
         self.stats_frame.pack(fill="x", pady=(0, 12))
         self._make_stats()
         panel = tk.Frame(content, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
         panel.pack(fill="both", expand=True)
         head = tk.Frame(panel, bg=WHITE); head.pack(fill="x", padx=14, pady=(12, 8))
-        self.list_label = tk.Label(head, text="Daftar cetakan", bg=WHITE, fg="#4f684e", font=("Segoe UI", 10, "bold"))
+        self.list_label = tk.Label(head, text="Daftar cetakan", bg=WHITE, fg=INK, font=("Segoe UI", 10, "bold"))
         self.list_label.pack(anchor="w")
-        tk.Label(head, text="Ekspor dan cetak mengikuti pencarian serta filter yang aktif.", bg=WHITE, fg="#929f8c", font=("Segoe UI", 8)).pack(anchor="w", pady=(3, 0))
-        self.actions = tk.Frame(panel, bg="#fbfcfa", highlightbackground="#e9eee6", highlightthickness=1)
+        tk.Label(head, text="Ekspor dan cetak mengikuti pencarian serta filter yang aktif.", bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", pady=(3, 0))
+        self.actions = tk.Frame(panel, bg=WHITE, highlightbackground=LINE, highlightthickness=1)
         self.actions.pack(fill="x")
         self.toolbar_buttons = {}
         self._action_button("＋ Tambah", self.add_record, primary=True)
         self._action_button("↑ Impor Excel", self.import_excel)
         self._action_button("↓ Ekspor Excel", self.export_excel)
         self._action_button("▣ Cetak PDF", self.print_pdf)
-        self.readonly_label = tk.Label(self.actions, text="Akses baca-saja", bg="#fbf4e7", fg="#96794f", padx=8, pady=5, font=("Segoe UI", 8))
+        self.readonly_label = tk.Label(self.actions, text="Akses baca-saja", bg="#493c27", fg="#f3d59b", padx=8, pady=5, font=("Segoe UI", 8))
         if self.mode == "viewer" or self.account.get("role") == "VIEWER":
             self._set_readonly()
         self.filters = tk.Frame(panel, bg=WHITE)
@@ -366,7 +378,7 @@ class NativeApp:
             self.toggle_button = ttk.Button(actions_bottom, text="Aktif / Nonaktif", command=self.toggle_status); self.toggle_button.pack(side="left", padx=6); self.row_action_buttons.append(self.toggle_button)
             if self.account.get("role") == "SUPERVISOR":
                 b = ttk.Button(actions_bottom, text="Hapus", command=self.delete_record); b.pack(side="left", padx=6); self.row_action_buttons.append(b)
-        self.row_count = tk.Label(actions_bottom, textvariable=self.status_text, bg=WHITE, fg="#909d8a", font=("Segoe UI", 8))
+        self.row_count = tk.Label(actions_bottom, textvariable=self.status_text, bg=WHITE, fg=MUTED, font=("Segoe UI", 8))
         self.row_count.pack(side="left", padx=9)
         ttk.Label(actions_bottom, text="Baris per halaman").pack(side="right", padx=(6, 0))
         self.page_box = ttk.Combobox(actions_bottom, textvariable=self.page_var, state="readonly", width=9,
@@ -404,432 +416,7 @@ class NativeApp:
             if text.startswith("＋") or "Impor" in text:
                 return
         if self.collection == "history" and (text.startswith("＋") or "Impor" in text):
-            return
-        if self.collection == "purchases" and self.account.get("role") != "SUPERVISOR" and (text.startswith("＋") or "Impor" in text):
-            return
-        button = RoundedToolbarButton(self.actions, text, command, primary=primary)
-        button.pack(side="left", padx=(9 if text.startswith("＋") else 0, 6), pady=7)
-        key = "add" if text.startswith("＋") else ("import" if "Impor" in text else ("export" if "Ekspor" in text else "print"))
-        self.toolbar_buttons[key] = button
-
-    def _set_readonly(self):
-        for child in self.actions.winfo_children():
-            if "Tambah" in str(child.cget("text")) or "Impor" in str(child.cget("text")):
-                child.pack_forget()
-        self.readonly_label.pack(side="right", padx=9)
-
-    def _make_stats(self):
-        self.stat_values = []
-        for i in range(4):
-            frame = tk.Frame(self.stats_frame, bg=WHITE, highlightbackground=LINE, highlightthickness=1, padx=12, pady=8)
-            frame.pack(side="left", fill="x", expand=True, padx=(0 if i == 0 else 8, 0))
-            label = tk.Label(frame, text=("Total", "Kode unik", "Aktif", "Nonaktif")[i], bg=WHITE, fg="#8d9a87", font=("Segoe UI", 8))
-            label.pack(anchor="w")
-            value = tk.Label(frame, text="—", bg=WHITE, fg="#4e724e", font=("Segoe UI", 18))
-            value.pack(anchor="w", pady=(3, 0))
-            self.stat_values.append((label, value))
-
-    def select_collection(self, collection):
-        self.collection = collection
-        for key, button in self.nav_buttons.items():
-            button.configure(bg=PALE if key == collection else WHITE, fg=INK if key == collection else MUTED)
-        self.title_label.configure(text=TABS[collection])
-        self.crumb_label.configure(text="Workspace   ›   " + TABS[collection])
-        self.list_label.configure(text="Daftar " + TABS[collection].lower())
-        for button in getattr(self, "row_action_buttons", []):
-            disabled = collection == "history" or (button is getattr(self, "toggle_button", None) and collection == "purchases")
-            button.configure(state="disabled" if disabled else "normal")
-        self._update_toolbar()
-        self._build_filters()
-        self.refresh()
-
-    def _build_filters(self):
-        for child in self.filter_fields_frame.winfo_children():
-            child.destroy()
-        self.filter_vars = {}
-        self.filter_boxes = {}
-        fields = FILTER_FIELDS.get(self.collection, ())
-        for index, (field, label) in enumerate(fields):
-            cell = tk.Frame(self.filter_fields_frame, bg=WHITE)
-            cell.grid(row=index // 4, column=index % 4, sticky="ew", padx=(0, 8), pady=(0, 4))
-            self.filter_fields_frame.grid_columnconfigure(index % 4, weight=1)
-            tk.Label(cell, text=label, bg=WHITE, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
-            variable = tk.StringVar(value="Semua")
-            box = ttk.Combobox(cell, textvariable=variable, state="readonly")
-            box.pack(fill="x")
-            box.bind("<<ComboboxSelected>>", lambda _event: self.refresh_table())
-            self.filter_vars[field] = variable
-            self.filter_boxes[field] = box
-        self._update_filter_choices()
-
-    def _filter_value(self, field, row):
-        value = row.get(field, "")
-        if field == "patternId" and self.collection == "molds":
-            patterns = self.catalog.get("collections", {}).get("patterns", {})
-            pattern = patterns.get(str(value), {})
-            if not pattern:
-                pattern = next((item for item in patterns.values() if item.get("code") == value), {})
-            value = pattern.get("code", value)
-        if field == "status":
-            if self.collection == "purchases":
-                return str(value or "").strip()
-            return self._status(value)
-        if field == "enabled":
-            return "Aktif" if value else "Nonaktif"
-        if isinstance(value, (dict, list)):
-            return json.dumps(value, ensure_ascii=False, sort_keys=True)
-        return str(value or "").strip()
-
-    def _update_filter_choices(self):
-        records = self.rows if isinstance(self.rows, dict) else {str(i): row for i, row in enumerate(self.rows)}
-        for field, box in self.filter_boxes.items():
-            values = sorted({self._filter_value(field, row) for row in records.values()
-                             if isinstance(row, dict) and self._filter_value(field, row)})
-            box.configure(values=("Semua",) + tuple(values))
-            if self.filter_vars[field].get() not in ("Semua",) + tuple(values):
-                self.filter_vars[field].set("Semua")
-
-    def _update_toolbar(self):
-        can_edit = self.mode != "viewer" and self.account.get("role") != "VIEWER" and self.collection != "history"
-        if self.collection == "purchases" and self.account.get("role") != "SUPERVISOR":
-            can_edit = False
-        # Re-pack every visible action in one fixed order. Buttons can be hidden
-        # and restored when the user changes collections; relying on Tk's old
-        # pack order made restored actions jump to the end of the toolbar.
-        for button in self.toolbar_buttons.values():
-            button.pack_forget()
-        for key in ("add", "import", "export", "print"):
-            button = self.toolbar_buttons.get(key)
-            if button is None:
-                continue
-            allowed = can_edit if key in ("add", "import") else True
-            if allowed:
-                button.pack(side="left", padx=(9 if key == "add" else 0, 6), pady=7)
-
-    def _fetch_catalog(self):
-        if self.mode == "master":
-            return self.store.snapshot(include_private=True)
-        if self.mode == "client":
-            return self.client.catalog()
-        path = self.config.get("snapshot_path", "published/catalog.json")
-        with open(path, "r", encoding="utf-8") as stream:
-            return json.load(stream)
-
-    def refresh(self):
-        try:
-            if self.collection == "accounts":
-                self.rows = self.store.list_users() if self.mode == "master" else self.client.accounts()
-            elif self.collection == "history":
-                history = self.store.audit_rows() if self.mode == "master" else self.client.history()
-                self.rows = {str(row.get("id", i)): row for i, row in enumerate(history)}
-            else:
-                self.catalog = self._fetch_catalog()
-                self.rows = self.catalog.get("collections", {}).get(self.collection, {})
-            self.connection_label.configure(text="Salinan baca-saja · publikasi SALAK" if self.mode == "viewer" else ("Data utama · TENDERLOIN" if self.mode == "master" else "Terhubung · TENDERLOIN"))
-            self._update_stats()
-            self.refresh_table()
-        except Exception as exc:
-            self.status_text.set("Gagal memuat data: %s" % exc)
-            messagebox.showerror("Koneksi DELIMOLD", "Data tidak dapat dimuat.\n\n%s" % exc, parent=self.root)
-
-    def _update_stats(self):
-        records = list(self.rows.values()) if isinstance(self.rows, dict) else list(self.rows)
-        status_values = [str(item.get("status", "active")).lower() for item in records if isinstance(item, dict)]
-        active = sum(1 for status in status_values if status in ("active", "aktif"))
-        inactive = len(status_values) - active
-        if self.collection == "molds":
-            unique = len(set(str(row.get("spec", "")) for row in records if isinstance(row, dict)))
-            labels = ("Daftar cetakan", "Kode spesifikasi", "Cetakan aktif", "Nonaktif")
-        elif self.collection == "containers":
-            unique = len(set(str(row.get("code", "")) for row in records if isinstance(row, dict)))
-            labels = ("Total container", "Kode container", "Aktif", "Nonaktif")
-        elif self.collection == "patterns":
-            unique = len(set(str(row.get("code", "")) for row in records if isinstance(row, dict)))
-            labels = ("Total pattern", "Kode pattern", "Aktif", "Nonaktif")
-        elif self.collection == "stickers":
-            unique = len(set(str(row.get("name", "")) for row in records if isinstance(row, dict)))
-            labels = ("Total sticker", "Nama sticker", "Aktif", "Nonaktif")
-        elif self.collection == "projects":
-            unique = len(set(str(row.get("spec", "")) for row in records if isinstance(row, dict)))
-            labels = ("Total project", "Kode spek", "Aktif", "Nonaktif")
-        elif self.collection == "purchases":
-            unique = len(set(str(row.get("spec", "")) for row in records if isinstance(row, dict)))
-            active = sum(1 for row in records if isinstance(row, dict) and row.get("status") == "Diajukan")
-            inactive = sum(1 for row in records if isinstance(row, dict) and row.get("status") == "Diterima")
-            labels = ("Total pembelian", "Kode spek", "Diajukan", "Diterima")
-        elif self.collection == "accounts":
-            unique = len(set(str(row.get("role", "")) for row in records if isinstance(row, dict)))
-            active = sum(1 for row in records if isinstance(row, dict) and row.get("enabled"))
-            inactive = len(records) - active
-            labels = ("Total akun", "Peran", "Aktif", "Nonaktif")
-        else:
-            unique = len(set(str(row.get("collection", "")) for row in records if isinstance(row, dict)))
-            active = sum(1 for row in records if isinstance(row, dict) and row.get("action") == "create")
-            inactive = sum(1 for row in records if isinstance(row, dict) and row.get("action") in ("edit", "delete"))
-            labels = ("Total perubahan", "Jenis data", "Dibuat", "Diedit / hapus")
-        values = (len(records), unique, active, inactive)
-        for (label, value), name, number in zip(self.stat_values, labels, values):
-            label.configure(text=name); value.configure(text=str(number))
-
-    def refresh_table(self):
-        if not hasattr(self, "tree"):
-            return
-        records = self.rows if isinstance(self.rows, dict) else {str(i): value for i, value in enumerate(self.rows)}
-        self._update_filter_choices()
-        mapped = []
-        for key, row in records.items():
-            if not isinstance(row, dict):
-                continue
-            values = self._display_values(key, row)
-            haystack = " ".join(str(v) for v in values).lower()
-            query = self.search_var.get().strip().lower()
-            if query and query not in haystack:
-                continue
-            if any(variable.get() != "Semua" and self._filter_value(field, row) != variable.get()
-                   for field, variable in self.filter_vars.items()):
-                continue
-            mapped.append((key, row, values))
-        self.filtered = mapped
-        columns = self._columns()
-        self.tree.configure(columns=columns)
-        for col, title in zip(columns, self._column_titles()):
-            self.tree.heading(col, text=title)
-            self.tree.column(col, width=120, minwidth=75, stretch=True, anchor="w")
-        self.tree.delete(*self.tree.get_children())
-        limit = self.page_var.get()
-        page = mapped if limit == "Semua" else mapped[:int(limit or 50)]
-        for key, row, values in page:
-            self.tree.insert("", "end", iid=str(key), values=values)
-        self.status_text.set("Menampilkan %s dari %s data" % (len(page), len(mapped)))
-
-    def _columns(self):
-        return {"molds": ("code", "size", "pattern", "serial", "cure", "mtype", "status", "container"),
-                "containers": ("code", "serial", "od", "sw", "spacers", "status"),
-                "patterns": ("code", "name", "land", "status"),
-                "stickers": ("name", "status"),
-                "projects": ("spec", "name", "projectId", "status", "targetDays"),
-                "purchases": ("date", "spec", "size", "pattern", "moldNumber", "quantity", "supplier", "currency", "price", "status"),
-                "accounts": ("username", "display_name", "role", "enabled"),
-                "history": ("at", "action", "collection", "record_key", "username", "computer", "reason")} [self.collection]
-
-    def _column_titles(self):
-        return {"molds": ("KODE SPEK", "SIZE CETAKAN", "PATTERN", "NO. CETAKAN", "TIPE MASAK", "TIPE CETAKAN", "STATUS", "CONTAINER"),
-                "containers": ("KODE CONTAINER", "NO.", "OD SECTOR", "SW SECTOR", "SPACER", "STATUS"),
-                "patterns": ("KODE PATTERN", "NAMA", "LAND", "STATUS"),
-                "stickers": ("NAMA STICKER", "STATUS"),
-                "projects": ("KODE SPEK", "PROJECT", "ID PROJECT", "STATUS", "TARGET HARI"),
-                "purchases": ("TANGGAL", "KODE SPEK", "SIZE", "PATTERN", "NO. MOLD", "JUMLAH", "SUPPLIER", "MATA UANG", "HARGA SATUAN", "STATUS"),
-                "accounts": ("NAMA AKUN", "NAMA TAMPILAN", "PERAN", "AKTIF"),
-                "history": ("WAKTU", "AKSI", "DATA", "ID", "AKUN", "KOMPUTER", "ALASAN")} [self.collection]
-
-    def _display_values(self, key, row):
-        if self.collection == "molds":
-            patterns = self.catalog.get("collections", {}).get("patterns", {})
-            containers = self.catalog.get("collections", {}).get("containers", {})
-            pattern = patterns.get(str(row.get("patternId", "")), {})
-            if not pattern:
-                pattern = next((item for item in patterns.values() if item.get("code") == row.get("patternId")), {})
-            container = containers.get(str(row.get("containerId", "")), {})
-            if not container:
-                container = next((item for item in containers.values() if item.get("code") == row.get("containerId")), {})
-            return (row.get("spec", ""), row.get("size", ""), pattern.get("code", row.get("patternId", "")), row.get("serial", ""),
-                    row.get("cure", ""), row.get("mtype", ""), self._status(row.get("status")), container.get("code", row.get("containerId", "")))
-        if self.collection == "containers":
-            return (row.get("code", ""), row.get("serial", ""), row.get("od", ""), row.get("sw", ""), json.dumps(row.get("spacers", []), ensure_ascii=False), self._status(row.get("status")))
-        if self.collection == "patterns":
-            return (row.get("code", ""), row.get("name", ""), row.get("land", ""), self._status(row.get("status")))
-        if self.collection == "stickers":
-            return (row.get("name", ""), self._status(row.get("status")))
-        if self.collection == "projects":
-            return (row.get("spec", ""), row.get("name", ""), row.get("projectId", key), self._status(row.get("status")), row.get("targetDays", ""))
-        if self.collection == "purchases":
-            return tuple(row.get(col, "") for col in self._columns())
-        if self.collection == "accounts":
-            return (key, row.get("display_name", ""), row.get("role", ""), "Aktif" if row.get("enabled") else "Nonaktif")
-        if self.collection == "history":
-            return tuple(row.get(col, "") for col in self._columns())
-        return (row.get("code", key), row.get("name", ""), self._status(row.get("status")))
-
-    @staticmethod
-    def _status(value):
-        return "Aktif" if str(value or "active").lower() in ("active", "aktif") else "Nonaktif"
-
-    def reset_filters(self):
-        self.search_var.set("")
-        for variable in self.filter_vars.values():
-            variable.set("Semua")
-        self.refresh_table()
-
-    def _selected(self):
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("Pilih data", "Pilih satu baris terlebih dahulu.", parent=self.root)
-            return None
-        key = selection[0]
-        return key, self.rows.get(key) if isinstance(self.rows, dict) else None
-
-    def add_record(self):
-        if self.collection == "accounts":
-            self._account_form(None, None)
-            return
-        self._record_form(None, None)
-
-    def edit_record(self):
-        selected = self._selected()
-        if selected:
-            if self.collection == "accounts":
-                self._account_form(selected[0], selected[1])
-            elif self.collection != "history":
-                self._record_form(selected[0], selected[1])
-
-    def _account_form(self, username, record):
-        if self.account.get("role") != "SUPERVISOR":
-            return
-        dlg = tk.Toplevel(self.root); dlg.title("Tambah akun" if username is None else "Edit akun"); dlg.transient(self.root); dlg.grab_set(); dlg.resizable(False, False)
-        box = ttk.Frame(dlg, padding=20); box.pack(fill="both", expand=True)
-        ttk.Label(box, text="Tambah akun" if username is None else "Edit akun", font=("Segoe UI", 15, "bold"), foreground=INK).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 12))
-        labels = ("Nama akun", "Nama tampilan", "Peran", "Password baru (4–12 karakter; kosong = tetap)")
-        values = [username or "", (record or {}).get("display_name", ""), (record or {}).get("role", "ENGINEER"), ""]
-        widgets = []
-        for i, label in enumerate(labels):
-            ttk.Label(box, text=label).grid(row=i+1, column=0, sticky="w", padx=(0, 12), pady=6)
-            if i == 2:
-                widget = ttk.Combobox(box, values=("SUPERVISOR", "ENGINEER", "VIEWER"), state="readonly", width=35)
-                widget.set(values[i])
-            else:
-                widget = ttk.Entry(box, width=38, show="•" if i == 3 else "")
-                widget.insert(0, values[i])
-                if i == 0 and username:
-                    widget.configure(state="readonly")
-            widget.grid(row=i+1, column=1, sticky="ew", pady=6); widgets.append(widget)
-        error = tk.StringVar(); ttk.Label(box, textvariable=error, foreground="#a34739").grid(row=5, column=0, columnspan=2, sticky="w")
-        actions = ttk.Frame(box); actions.grid(row=6, column=0, columnspan=2, sticky="e", pady=(10, 0))
-        ttk.Button(actions, text="Batal", command=dlg.destroy).pack(side="left", padx=5)
-        def save():
-            name = widgets[0].get().strip(); display = widgets[1].get().strip() or name; role = widgets[2].get(); password = widgets[3].get()
-            try:
-                if not name: raise ValueError("Nama akun wajib diisi")
-                if self.mode == "master":
-                    if password:
-                        create_user(self.store, name, display, role, password)
-                    elif username:
-                        with self.store.lock:
-                            with self.store.connection:
-                                self.store.connection.execute("UPDATE users SET display_name=?,role=? WHERE username=?", (display, role, name))
-                    else:
-                        raise ValueError("Password wajib diisi untuk akun baru")
-                else:
-                    self.client.save_account({"username": name, "display_name": display, "role": role,
-                                              "password": password, "enabled": (record or {}).get("enabled", True)})
-                dlg.destroy(); self.refresh()
-            except Exception as exc: error.set(str(exc))
-        ttk.Button(actions, text="Simpan", command=save).pack(side="left", padx=5)
-        dlg.wait_window()
-
-    def _record_form(self, key, record):
-        if not self._can_write():
-            return
-        dlg = tk.Toplevel(self.root); dlg.title(("Edit " if key else "Tambah ") + TABS[self.collection]); dlg.transient(self.root); dlg.grab_set()
-        dlg.geometry("560x640")
-        outer = ttk.Frame(dlg, padding=18); outer.pack(fill="both", expand=True)
-        ttk.Label(outer, text=("Edit " if key else "Tambah ") + TABS[self.collection], font=("Segoe UI", 15, "bold"), foreground=INK).pack(anchor="w")
-        form = ttk.Frame(outer); form.pack(fill="both", expand=True, pady=12)
-        entries = {}
-        choice_maps = {}
-        defaults = {}
-        if not record and self.collection == "purchases":
-            defaults = {"date": time.strftime("%Y-%m-%d"), "quantity": 1, "currency": "USD", "status": "Diajukan"}
-        elif not record and self.collection == "molds":
-            defaults = {"serial": "01", "mtype": "2piece", "role": "main", "status": "active"}
-
-        def mold_choices(field, current):
-            catalog = self.catalog.get("collections", {})
-            if field == "patternId":
-                source = catalog.get("patterns", {})
-                result = {"Pilih pattern": ""}
-                for item_key, item in source.items():
-                    label = "%s · %s" % (item.get("code", item_key), item.get("name", ""))
-                    result[label] = item_key
-                return result
-            if field == "containerId":
-                source = catalog.get("containers", {})
-                result = {"Pilih container": ""}
-                for item_key, item in source.items():
-                    label = "%s · No. %s · OD/SW %s/%s" % (item.get("code", item_key), item.get("serial", ""), item.get("od", ""), item.get("sw", ""))
-                    result[label] = item_key
-                return result
-            if field == "mainId":
-                source = catalog.get("molds", {})
-                result = {"Pilih main size": ""}
-                for item_key, item in source.items():
-                    if item_key != key and item.get("mtype") == "segmented" and item.get("role") in ("main", "sharing"):
-                        label = "%s/%s · %s" % (item.get("spec", ""), item.get("serial", ""), item.get("size", ""))
-                        result[label] = item_key
-                return result
-            if field == "spacer":
-                result = {"Tanpa spacer": ""}
-                container_id = (record or {}).get("containerId", "")
-                container = catalog.get("containers", {}).get(str(container_id), {})
-                for spacer in container.get("spacers", []) or []:
-                    size = spacer.get("size", "")
-                    result["%s mm · OD sector %s" % (size, spacer.get("od", ""))] = str(size)
-                return result
-            options = {"cure": (("Pilih tipe masak", ""), ("BOM", "BOM"), ("Airbag", "Airbag")),
-                       "mtype": (("2 Piece", "2piece"), ("Segmented", "segmented")),
-                       "role": (("Main size", "main"), ("Sharing size", "sharing")),
-                       "status": (("Aktif", "active"), ("Nonaktif (tidak bisa dipakai)", "inactive"))}
-            return {label: value for label, value in options.get(field, ())}
-
-        for index, (field, label) in enumerate(FIELDS.get(self.collection, [])):
-            ttk.Label(form, text=label).grid(row=index, column=0, sticky="nw", padx=(0, 10), pady=5)
-            if self.collection == "molds" and field in ("patternId", "containerId", "spacer", "cure", "mtype", "role", "mainId", "status"):
-                current = (record or {}).get(field, defaults.get(field, ""))
-                mapping = mold_choices(field, current)
-                labels = list(mapping)
-                widget = ttk.Combobox(form, width=46, state="readonly", values=labels)
-                widget.grid(row=index, column=1, sticky="ew", pady=4)
-                selected = next((name for name, choice in mapping.items() if str(choice) == str(current)), "")
-                if not selected and field == "status": selected = "Aktif"
-                if not selected and field == "mtype" and not record: selected = "2 Piece"
-                if not selected and field == "role" and not record: selected = "Main size"
-                if not selected and field == "spacer": selected = "Tanpa spacer"
-                if not selected and field == "mainId": selected = "Pilih main size"
-                if selected: widget.set(selected)
-                choice_maps[field] = mapping
-            elif self.collection == "purchases" and field == "currency":
-                widget = ttk.Combobox(form, width=46, state="readonly", values=("USD", "RMB", "IDR"))
-                widget.grid(row=index, column=1, sticky="ew", pady=4)
-                widget.set((record or {}).get(field, defaults.get(field, "USD")))
-            elif self.collection == "purchases" and field == "status":
-                widget = ttk.Combobox(form, width=46, state="readonly", values=("Diajukan", "Dipesan", "Proses Pembuatan", "Selesai", "Diterima"))
-                widget.grid(row=index, column=1, sticky="ew", pady=4)
-                widget.set((record or {}).get(field, defaults.get(field, "Diajukan")))
-            elif field in ("note", "spacers"):
-                widget = tk.Text(form, height=3 if field == "note" else 2, width=44, font=("Segoe UI", 9), wrap="word")
-                widget.grid(row=index, column=1, sticky="ew", pady=4)
-                value = (record or {}).get(field, defaults.get(field, "active" if field == "status" else ""))
-                if isinstance(value, (dict, list)):
-                    value = json.dumps(value, ensure_ascii=False)
-                widget.insert("1.0", value)
-            else:
-                widget = ttk.Entry(form, width=48)
-                widget.grid(row=index, column=1, sticky="ew", pady=4)
-                value = (record or {}).get(field, defaults.get(field, "active" if field == "status" else ""))
-                if field == "brands" and isinstance(value, list):
-                    value = ", ".join(str(item.get("brand", "")) for item in value if isinstance(item, dict))
-                elif isinstance(value, (dict, list)):
-                    value = json.dumps(value, ensure_ascii=False)
-                widget.insert(0, str(value))
-            entries[field] = widget
-        if self.collection == "molds" and "containerId" in entries and "spacer" in entries:
-            def refresh_spacer_choices(_event=None):
-                container_key = choice_maps["containerId"].get(entries["containerId"].get(), "")
-                container = self.catalog.get("collections", {}).get("containers", {}).get(str(container_key), {})
-                spacer_map = {"Tanpa spacer": ""}
-                for spacer in container.get("spacers", []) or []:
-                    size = spacer.get("size", "")
-                    spacer_map["%s mm · OD sector %s" % (size, spacer.get("od", ""))] = str(size)
-                previous = choice_maps.get("spacer", {}).get(entries["spacer"].get(), "")
+     …6600 tokens truncated…get(), "")
                 choice_maps["spacer"] = spacer_map
                 entries["spacer"].configure(values=list(spacer_map))
                 selected = next((name for name, size in spacer_map.items() if str(size) == str(previous)), "Tanpa spacer")
