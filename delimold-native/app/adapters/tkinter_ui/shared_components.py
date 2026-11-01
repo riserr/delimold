@@ -72,6 +72,84 @@ class SidebarNavItem(tk.Canvas):
                          font=("Segoe UI", 9))
 
 
+class RoundedScrollbar(tk.Canvas):
+    """Compact canvas scrollbar with rounded track and thumb."""
+
+    def __init__(self, parent, command, width=14):
+        self.command = command
+        self.thumb = (0.0, 1.0)
+        self.hovered = False
+        self.drag_offset = None
+        super().__init__(parent, width=width, bd=0, highlightthickness=0,
+                         relief="flat", bg=parent.cget("bg"), cursor="hand2")
+        self.bind("<Configure>", lambda _event: self._draw())
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        self.bind("<Button-1>", self._press)
+        self.bind("<B1-Motion>", self._drag)
+        self.bind("<ButtonRelease-1>", self._release)
+        self._draw()
+
+    def set(self, first, last):
+        self.thumb = (float(first), float(last))
+        self._draw()
+
+    def _on_enter(self, _event):
+        self.hovered = True
+        self._draw()
+
+    def _on_leave(self, _event):
+        self.hovered = False
+        self._draw()
+
+    def _bounds(self):
+        height = max(self.winfo_height(), 20)
+        top = max(2, int(self.thumb[0] * height))
+        bottom = min(height - 2, int(self.thumb[1] * height))
+        if bottom - top < 24:
+            bottom = min(height - 2, top + 24)
+            top = max(2, bottom - 24)
+        return top, bottom
+
+    def _draw(self):
+        self.delete("all")
+        width = max(self.winfo_width(), 14)
+        height = max(self.winfo_height(), 20)
+        center = width // 2
+        self._pill(center, 2, height - 2, "#27352c")
+        top, bottom = self._bounds()
+        color = GREEN if self.hovered else "#718477"
+        self._pill(center, top, bottom, color)
+
+    def _pill(self, center, top, bottom, color):
+        radius = max(2, (self.winfo_width() - 6) // 2)
+        x1, x2 = center - radius, center + radius
+        self.create_rectangle(x1, top + radius, x2, bottom - radius,
+                              fill=color, outline=color)
+        self.create_oval(x1, top, x2, top + 2 * radius,
+                         fill=color, outline=color)
+        self.create_oval(x1, bottom - 2 * radius, x2, bottom,
+                         fill=color, outline=color)
+
+    def _press(self, event):
+        top, bottom = self._bounds()
+        height = max(self.winfo_height(), 1)
+        if top <= event.y <= bottom:
+            self.drag_offset = (event.y - top) / height
+            return
+        self.command("scroll", -1 if event.y < top else 1, "pages")
+
+    def _drag(self, event):
+        if self.drag_offset is None:
+            return
+        height = max(self.winfo_height(), 1)
+        fraction = max(0.0, min(1.0, event.y / height - self.drag_offset))
+        self.command("moveto", str(fraction))
+
+    def _release(self, _event):
+        self.drag_offset = None
+
+
 def build_sidebar(parent, role, mode, selected, on_select, on_settings=None):
     sidebar = tk.Frame(parent, bg=WHITE, width=205, highlightbackground=LINE, highlightthickness=1)
     sidebar.pack(side="left", fill="y")
