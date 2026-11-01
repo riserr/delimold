@@ -1,0 +1,1 @@
+"""DELIMOLD desktop application package."""

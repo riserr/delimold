@@ -1,9 +1,7 @@
 {
   "mode": "master",
   "database_path": "",
-  "seed_path": "seed/catalog.js",
-  "api_host": "0.0.0.0",
-  "api_port": 8766,
+  "seed_path": "seed/catalog.json",
   "publish_path": "",
-  "publish_on_start": false
+  "publish_on_start": true
 }
