@@ -3,6 +3,7 @@ import json
 import re
 import socket
 import tkinter as tk
+import tkinter.font as tkfont
 import time
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from uuid import uuid4
@@ -16,6 +17,51 @@ INK = "#405a44"
 MUTED = "#82907c"
 LINE = "#e2e9df"
 WHITE = "#ffffff"
+
+
+class RoundedToolbarButton(tk.Canvas):
+    """Canvas-backed toolbar button matching checkpoint v12's rounded shape."""
+    def __init__(self, parent, text, command, primary=False):
+        self.label = text
+        self.command = command
+        self.primary = primary
+        self.font = tkfont.Font(parent, family="Segoe UI", size=8)
+        self.label_color = WHITE if primary else "#294436"
+        self.normal_fill = "#25684d" if primary else WHITE
+        self.hover_fill = self.normal_fill if primary else "#f7f9f5"
+        self.border = self.normal_fill if primary else "#dce5d3"
+        self.width = self.font.measure(text) + 26
+        self.height = self.font.metrics("linespace") + 16
+        super().__init__(parent, width=self.width, height=self.height, bd=0, highlightthickness=0,
+                         relief="flat", bg=parent.cget("bg"), takefocus=True, cursor="hand2")
+        self._draw(self.normal_fill)
+        self.bind("<Enter>", lambda _event: self._draw(self.hover_fill))
+        self.bind("<Leave>", lambda _event: self._draw(self.normal_fill))
+        self.bind("<Button-1>", self._invoke)
+        self.bind("<Return>", self._invoke)
+        self.bind("<space>", self._invoke)
+
+    def _rounded_rect(self, x1, y1, x2, y2, radius, fill, tags):
+        r = radius
+        self.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=fill, tags=tags)
+        self.create_rectangle(x1, y1 + r, x2, y2 - r, fill=fill, outline=fill, tags=tags)
+        for x, y in ((x1, y1), (x2 - 2 * r, y1), (x1, y2 - 2 * r), (x2 - 2 * r, y2 - 2 * r)):
+            self.create_oval(x, y, x + 2 * r, y + 2 * r, fill=fill, outline=fill, tags=tags)
+
+    def _draw(self, fill):
+        self.delete("all")
+        self._rounded_rect(0, 0, self.width - 1, self.height - 1, 5, self.border, "border")
+        self._rounded_rect(1, 1, self.width - 2, self.height - 2, 4, fill, "surface")
+        self.create_text(self.width // 2, self.height // 2, text=self.label, fill=self.label_color,
+                         font=self.font, tags="label")
+
+    def _invoke(self, _event=None):
+        self.command()
+
+    def cget(self, key):
+        if key == "text":
+            return self.label
+        return super().cget(key)
 
 TABS = {
     "molds": "Data Cetakan",
@@ -327,10 +373,7 @@ class NativeApp:
             return
         if self.collection == "purchases" and self.account.get("role") != "SUPERVISOR" and (text.startswith("＋") or "Impor" in text):
             return
-        button = tk.Button(self.actions, text=text, command=command, relief="flat", bd=0, padx=10, pady=7,
-                           bg=GREEN if primary else WHITE, fg=WHITE if primary else "#526d50",
-                           activebackground="#205c41" if primary else PALE, activeforeground=WHITE if primary else INK,
-                           font=("Segoe UI", 8), highlightbackground=LINE, highlightthickness=1)
+        button = RoundedToolbarButton(self.actions, text, command, primary=primary)
         button.pack(side="left", padx=(9 if text.startswith("＋") else 0, 6), pady=7)
         key = "add" if text.startswith("＋") else ("import" if "Impor" in text else ("export" if "Ekspor" in text else "print"))
         self.toolbar_buttons[key] = button
