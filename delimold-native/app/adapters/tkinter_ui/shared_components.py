@@ -97,20 +97,59 @@ class SidebarNavItem(tk.Canvas):
             fill = "#26352b"
         else:
             fill = WHITE
-        radius = 6
-        points = [
-            radius, 2, width-radius, 2, width-2, radius+2, width-2, height-radius-2,
-            width-radius, height-2, radius, height-2, 2, height-radius-2, 2, radius+2,
-        ]
-        self.create_polygon(points, smooth=True, splinesteps=16, fill=fill, outline=fill)
-        icon_color = GREEN if not self.selected else GREEN
+        left, top, right, bottom, radius = 2, 2, width-2, height-2, 6
+        self.create_rectangle(left+radius, top, right-radius, bottom, fill=fill, outline=fill, width=0)
+        self.create_rectangle(left, top+radius, right, bottom-radius, fill=fill, outline=fill, width=0)
+        for x, y in ((left, top), (right-2*radius, top),
+                     (left, bottom-2*radius), (right-2*radius, bottom-2*radius)):
+            self.create_oval(x, y, x+2*radius, y+2*radius, fill=fill, outline=fill, width=0)
         text_color = INK if self.selected else MUTED
         if self.selected:
-            self.create_line(3, 10, 3, height-10, fill=GREEN, width=3, capstyle="round")
-        self.create_text(17, height/2, text="▤", anchor="w", fill=icon_color,
+            self.create_line(4, 11, 4, height-11, fill=GREEN, width=2, capstyle="round")
+        self.create_text(17, height/2, text="▤", anchor="w", fill=GREEN,
                          font=("Segoe UI", 9))
         self.create_text(34, height/2, text=self.label, anchor="w", fill=text_color,
                          font=("Segoe UI", 9))
+
+
+class RoundedField(tk.Frame):
+    """Rounded border around an existing ttk input control."""
+
+    def __init__(self, parent, widget_type, *args, **kwargs):
+        self.outer_bg = parent.cget("bg")
+        self.focused = False
+        super().__init__(parent, bg=self.outer_bg, bd=0, highlightthickness=0)
+        self.canvas = tk.Canvas(self, bg=self.outer_bg, bd=0, highlightthickness=0)
+        self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        self.control = widget_type(self, *args, **kwargs)
+        self.control.pack(fill="both", expand=True, padx=5, pady=3)
+        self.control.bind("<FocusIn>", self._focus_in, add="+")
+        self.control.bind("<FocusOut>", self._focus_out, add="+")
+        self.bind("<Configure>", lambda _event: self._draw())
+        self._draw()
+
+    def _focus_in(self, _event=None):
+        self.focused = True
+        self._draw()
+
+    def _focus_out(self, _event=None):
+        self.focused = False
+        self._draw()
+
+    def _rounded_rect(self, x1, y1, x2, y2, radius, color):
+        r = min(radius, max(2, (x2-x1)//2), max(2, (y2-y1)//2))
+        x2 -= 1
+        y2 -= 1
+        self.canvas.create_rectangle(x1+r, y1, x2-r, y2, fill=color, outline=color, width=0)
+        self.canvas.create_rectangle(x1, y1+r, x2, y2-r, fill=color, outline=color, width=0)
+        for x, y in ((x1, y1), (x2-2*r, y1), (x1, y2-2*r), (x2-2*r, y2-2*r)):
+            self.canvas.create_oval(x, y, x+2*r, y+2*r, fill=color, outline=color, width=0)
+
+    def _draw(self):
+        self.canvas.delete("all")
+        width, height = max(self.winfo_width(), 4), max(self.winfo_height(), 4)
+        self._rounded_rect(0, 0, width, height, 6, GREEN if self.focused else LINE)
+        self._rounded_rect(1, 1, width-1, height-1, 5, "#18221c")
 
 
 class RoundedScrollbar(tk.Canvas):
